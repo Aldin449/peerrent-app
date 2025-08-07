@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Item {
+  id          String    @id @default(cuid())
+  title       String
+  description String    @db.Text
+  pricePerDay Float
+  location    String
+  images      String?   @db.LongText
+  ownerId     String
+  createdAt   DateTime? @default(now())
+  user        User      @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "item_ibfk_1")
+  message     Message[]
+  Booking     Booking[]
+
+  @@index([ownerId], map: "ownerId")
+  @@index([createdAt(sort: Desc)], map: "idx_created_at")
+  @@index([title, location], map: "idx_search")
+  @@index([pricePerDay], map: "idx_price")
+}
+
+model Message {
+  id        String    @id @default(cuid())
+  content   String    @db.Text
+  senderId  String
+  itemId    String
+  createdAt DateTime? @default(now())
+  user      User      @relation(fields: [senderId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "message_ibfk_1")
+  item      Item      @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "message_ibfk_2")
+
+  @@index([itemId], map: "itemId")
+  @@index([senderId], map: "senderId")
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique(map: "email")
+  name         String?
+  password     String
+  createdAt    DateTime?      @default(now())
+  item         Item[]
+  message      Message[]
+  Booking      Booking[]
+  Notification Notification[]
+}
+
+model Booking {
+  id        String        @id @default(uuid())
+  item      Item          @relation(fields: [itemId], references: [id])
+  itemId    String
+  user      User          @relation(fields: [userId], references: [id])
+  userId    String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime      @default(now())
+  status    BookingStatus @default(PENDING)
+
+  @@index([itemId])
+  @@index([userId])
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  bookingId String
+  itemId    String
+  startDate DateTime
+  endDate   DateTime
+  isSeen    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
