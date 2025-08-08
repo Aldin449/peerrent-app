@@ -17,6 +17,41 @@ function getRentalStatusColor(isRented: boolean) {
 }
 
 export default async function ItemPage({ params }: Props) {
+    // AUTOMATIC CLEANUP: Delete expired items before showing item details
+    // This ensures users don't see items that should be deleted
+    try {
+        const itemsToDelete = await prisma.item.findMany({
+            where: {
+                Booking: {
+                    some: {
+                        status: 'APPROVED',
+                        endDate: { lt: new Date() } // End date is in the past
+                    }
+                }
+            },
+            select: { id: true }
+        });
+
+        if (itemsToDelete.length > 0) {
+            // Delete in correct order due to foreign key constraints
+            await prisma.booking.deleteMany({
+                where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+            });
+            await prisma.notification.deleteMany({
+                where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+            });
+            await prisma.message.deleteMany({
+                where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+            });
+            await prisma.item.deleteMany({
+                where: { id: { in: itemsToDelete.map(item => item.id) } }
+            });
+            
+            console.log(`Auto-deleted ${itemsToDelete.length} expired items from item page`);
+        }
+    } catch (error) {
+        console.error('Error in automatic cleanup:', error);
+    }
 
     const { id } = await params;
     const session = await auth();

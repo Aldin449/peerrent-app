@@ -15,6 +15,7 @@ interface Item {
     images: string[];
     pricePerDay: number;
     createdAt: string;
+    isRented: boolean;
 }
 
 interface MyItemsProps {
@@ -56,6 +57,8 @@ async function getMyItems(userId: string, page: number) {
     };
 }
 
+
+
 export default async function MyItems({ searchParams }: MyItemsProps) {
     const session = await auth();
     
@@ -76,7 +79,7 @@ export default async function MyItems({ searchParams }: MyItemsProps) {
     const params = await searchParams;
     const page = parseInt(params?.page || '1');
     const { items, total, totalPages } = await getMyItems(session.user.id, page);
-
+    console.log('MyItems', items);
     if (!items || items.length === 0) {
         return (
             <div className="max-w-4xl mx-auto mt-10 text-center text-gray-600">
@@ -101,7 +104,7 @@ export default async function MyItems({ searchParams }: MyItemsProps) {
                         className="border rounded-lg p-4 shadow hover:shadow-md transition block"
                     >
                         {item.images && item.images.length > 0 && (
-                            <div className="mb-3">
+                            <div className="relative mb-3">
                                 <Image
                                     src={item.images[0]}
                                     alt={item.title}
@@ -109,6 +112,11 @@ export default async function MyItems({ searchParams }: MyItemsProps) {
                                     height={200}
                                     className="w-full h-48 object-cover rounded"
                                 />
+                                {item.isRented && (
+                                    <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs">
+                                        Iznajmljeno
+                                    </div>
+                                )}
                             </div>
                         )}
                         <h2 className="text-xl font-semibold mb-2">{item.title}</h2>

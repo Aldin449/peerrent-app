@@ -29,6 +29,42 @@ interface PublicItemListProps {
 }
 
 async function getItems(page: number, search: string) {
+  // AUTOMATIC CLEANUP: Delete expired items before showing the list
+  // This ensures users only see items that are actually available
+  try {
+    const itemsToDelete = await prisma.item.findMany({
+      where: {
+        Booking: {
+          some: {
+            status: 'APPROVED',
+            endDate: { lt: new Date() } // End date is in the past
+          }
+        }
+      },
+      select: { id: true }
+    });
+
+    if (itemsToDelete.length > 0) {
+      // Delete in correct order due to foreign key constraints
+      await prisma.booking.deleteMany({
+        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+      });
+      await prisma.notification.deleteMany({
+        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+      });
+      await prisma.message.deleteMany({
+        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+      });
+      await prisma.item.deleteMany({
+        where: { id: { in: itemsToDelete.map(item => item.id) } }
+      });
+      
+      console.log(`Auto-deleted ${itemsToDelete.length} expired items from PublicItemList`);
+    }
+  } catch (error) {
+    console.error('Error in automatic cleanup:', error);
+  }
+
   const limit = 6;
   const skip = (page - 1) * limit;
 

@@ -3,6 +3,42 @@ import prisma from '@/lib/prisma';
 import { BookingStatus } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
+  // AUTOMATIC CLEANUP: Delete expired items before showing public items
+  // This ensures users only see items that are actually available
+  try {
+    const itemsToDelete = await prisma.item.findMany({
+      where: {
+        Booking: {
+          some: {
+            status: 'APPROVED',
+            endDate: { lt: new Date() } // End date is in the past
+          }
+        }
+      },
+      select: { id: true }
+    });
+
+    if (itemsToDelete.length > 0) {
+      // Delete in correct order due to foreign key constraints
+      await prisma.booking.deleteMany({
+        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+      });
+      await prisma.notification.deleteMany({
+        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+      });
+      await prisma.message.deleteMany({
+        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+      });
+      await prisma.item.deleteMany({
+        where: { id: { in: itemsToDelete.map(item => item.id) } }
+      });
+      
+      console.log(`Auto-deleted ${itemsToDelete.length} expired items from public items API`);
+    }
+  } catch (error) {
+    console.error('Error in automatic cleanup:', error);
+  }
+
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || '6', 10);
