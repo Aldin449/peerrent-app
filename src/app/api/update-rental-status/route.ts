@@ -1,13 +1,33 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-import prisma from "./prisma"
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+export async function GET(request: NextRequest) {
+  try {
+    const rentedItems = await prisma.item.count({
+      where: { isRented: true }
+    });
+
+    const availableItems = await prisma.item.count({
+      where: { isRented: false }
+    });
+
+    return NextResponse.json({
+      success: true,
+      rentedItems,
+      availableItems,
+      totalItems: rentedItems + availableItems
+    });
+
+  } catch (error) {
+    console.error('Error getting rental status:', error);
+    return NextResponse.json(
+      { error: 'Failed to get rental status' },
+      { status: 500 }
+    );
+  }
 }
 
-// Utility function to update isRented status for all items
-export async function updateItemRentalStatus() {
+export async function POST(request: NextRequest) {
   try {
     // Get all items that should be marked as rented (have active approved bookings)
     const itemsToRent = await prisma.item.findMany({
@@ -82,67 +102,18 @@ export async function updateItemRentalStatus() {
       deletedCount = deleteResult.count;
     }
 
-    console.log(`Updated ${itemsToRent.length} items to rented, deleted ${deletedCount} expired items`);
-    
-    return { rented: itemsToRent.length, deleted: deletedCount };
-  } catch (error) {
-    console.error('Error updating item rental status:', error);
-    return { rented: 0, deleted: 0 };
-  }
-}
-
-// Function to update rental status when a booking is created/updated
-export async function updateItemRentalStatusForItem(itemId: string) {
-  try {
-    const activeBooking = await prisma.booking.findFirst({
-      where: {
-        itemId,
-        status: 'APPROVED',
-        AND: [
-          { startDate: { lte: new Date() } },
-          { endDate: { gte: new Date() } }
-        ]
-      }
+    return NextResponse.json({
+      success: true,
+      message: `Updated ${itemsToRent.length} items to rented, deleted ${deletedCount} expired items`,
+      rented: itemsToRent.length,
+      deleted: deletedCount
     });
 
-    const expiredBooking = await prisma.booking.findFirst({
-      where: {
-        itemId,
-        status: 'APPROVED',
-        endDate: { lt: new Date() } // End date is in the past
-      }
-    });
-
-    if (expiredBooking) {
-      // Delete the item and all related data
-      await prisma.booking.deleteMany({
-        where: { itemId }
-      });
-
-      await prisma.notification.deleteMany({
-        where: { itemId }
-      });
-
-      await prisma.message.deleteMany({
-        where: { itemId }
-      });
-
-      await prisma.item.delete({
-        where: { id: itemId }
-      });
-
-      return 'deleted';
-    } else {
-      // Update rental status based on active booking
-      await prisma.item.update({
-        where: { id: itemId },
-        data: { isRented: !!activeBooking }
-      });
-
-      return !!activeBooking;
-    }
   } catch (error) {
-    console.error('Error updating item rental status for item:', error);
-    return false;
+    console.error('Error updating rental status:', error);
+    return NextResponse.json(
+      { error: 'Failed to update rental status' },
+      { status: 500 }
+    );
   }
-}
+} 

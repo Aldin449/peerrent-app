@@ -33,14 +33,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Ovaj predmet je već iznajmljen u tom periodu' }, { status: 400 });
     }
 
-
-
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
     })
 
     if (!user) {
         return NextResponse.json({ error: 'Korisnik nije pronađen' }, { status: 404 });
+    }
+
+    const isRequestSent = await prisma.booking.findFirst({
+        where:{itemId:itemId, userId:user.id}
+    })
+
+    if (isRequestSent) {
+        return NextResponse.json({error:'Već ste poslali zahtjev'}, {status:400})
     }
 
     const booking = await prisma.booking.create({

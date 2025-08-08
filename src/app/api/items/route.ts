@@ -25,13 +25,21 @@ export async function GET(request: NextRequest) {
 
   const [items, total] = await Promise.all([
     prisma.item.findMany({
-      where: { ownerId: user.id },
+      where: { 
+        ownerId: user.id,
+        // Only show items that are not rented
+        isRented: false
+      },
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
     }),
     prisma.item.count({
-      where: { ownerId: user.id },
+      where: { 
+        ownerId: user.id,
+        // Only show items that are not rented
+        isRented: false
+      },
     })
   ]);
 

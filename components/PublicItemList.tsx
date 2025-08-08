@@ -4,6 +4,7 @@ import LoadingComponent from './Loader';
 import Image from 'next/image';
 import Link from 'next/link';
 import prisma from '../src/lib/prisma';
+import { BookingStatus } from '@prisma/client';
 
 interface Item {
   id: string;
@@ -33,13 +34,44 @@ async function getItems(page: number, search: string) {
 
   const whereClause = search.toLocaleLowerCase().trim()
     ? {
-        OR: [
-          { title: { contains: search } },
-          { location: { contains: search } },
-          { description: { contains: search } },
-        ],
+        AND: [
+          {
+            OR: [
+              { title: { contains: search } },
+              { location: { contains: search } },
+              { description: { contains: search } },
+            ],
+          },
+          {
+            // Exclude items that have active bookings
+            NOT: {
+              Booking: {
+                some: {
+                  status: BookingStatus.APPROVED,
+                  AND: [
+                    { startDate: { lte: new Date() } },
+                    { endDate: { gte: new Date() } }
+                  ]
+                }
+              }
+            }
+          }
+        ]
       }
-    : {};
+    : {
+        // Exclude items that have active bookings
+        NOT: {
+          Booking: {
+                            some: {
+                  status: BookingStatus.APPROVED,
+                  AND: [
+                    { startDate: { lte: new Date() } },
+                    { endDate: { gte: new Date() } }
+                  ]
+                }
+          }
+        }
+      };
 
   const [items, total] = await Promise.all([
     prisma.item.findMany({
@@ -58,11 +90,14 @@ async function getItems(page: number, search: string) {
     }),
   ]);
 
+
+
   return {
     items: items.map(item => ({
       ...item,
       images: item.images ? JSON.parse(item.images) : [],
       createdAt: item.createdAt?.toISOString() || null,
+      user: item.user, // Ensure user property is included
     })),
     total,
     totalPages: Math.ceil(total / limit),

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { BookingStatus } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -12,13 +13,24 @@ export async function GET(request: NextRequest) {
   // Optimize search query
   const whereClause = search
     ? {
-        OR: [
-          { title: { contains: search, mode: 'insensitive' as const } },
-          { location: { contains: search, mode: 'insensitive' as const} },
-          { description: { contains: search, mode: 'insensitive' as const} },
-        ],
+        AND: [
+          {
+            OR: [
+              { title: { contains: search, mode: 'insensitive' as const } },
+              { location: { contains: search, mode: 'insensitive' as const} },
+              { description: { contains: search, mode: 'insensitive' as const} },
+            ],
+          },
+          {
+            // Only show items that are not rented
+            isRented: false
+          }
+        ]
       }
-    : {};
+    : {
+        // Only show items that are not rented
+        isRented: false
+      };
 
   try {
     const [items, total] = await Promise.all([
@@ -32,11 +44,6 @@ export async function GET(request: NextRequest) {
             select: { name: true, email: true },
           },
         },
-        // Add query optimization hints
-        ...(search && { 
-          // Use index hints for search queries
-          _count: { select: { message: true } }
-        }),
       }),
       prisma.item.count({
         where: whereClause,

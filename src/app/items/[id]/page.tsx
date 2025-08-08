@@ -10,6 +10,12 @@ interface Props {
     };
 }
 
+function getRentalStatusColor(isRented: boolean) {
+    return isRented 
+        ? 'text-red-600 bg-red-100' 
+        : 'text-green-600 bg-green-100';
+}
+
 export default async function ItemPage({ params }: Props) {
 
     const { id } = await params;
@@ -28,28 +34,19 @@ export default async function ItemPage({ params }: Props) {
         return notFound();
     }
 
-    const statusOfBooking = await prisma.booking.findFirst({
+    // Check if the item is currently rented (has an active approved booking)
+    const activeBooking = await prisma.booking.findFirst({
         where: {
             itemId: id,
+            status: 'APPROVED',
+            AND: [
+                { startDate: { lte: new Date() } },
+                { endDate: { gte: new Date() } }
+            ]
         }
     });
-    const {status} = statusOfBooking || {};
 
-
-console.log(item, session);
-
-function getStatusColor(status:string | undefined) {
-    switch(status){
-        case 'PENDING':
-            return 'text-yellow-600 bg-yellow-100';
-        case 'APPROVED':
-            return 'text-green-600 bg-green-100';
-        case 'DECLINED':
-            return 'text-red-600 bg-red-100';
-        default:
-            return 'text-gray-600 bg-gray-100';
-    }
-}
+    const isCurrentlyRented = !!activeBooking;
 
     return (
         <div className="min-h-screen bg-gray-50 py-10 px-4">
@@ -59,7 +56,9 @@ function getStatusColor(status:string | undefined) {
                         <h1 className="text-4xl font-extrabold text-gray-900">{item.title}</h1>
                         <p className="text-gray-600 text-lg">{item.description}</p>
                     </div>
-                    <p className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(status)}`}>{status === 'PENDING' ? 'Na čekanju' : status === 'APPROVED' ? 'Odobreno' : 'Odbijeno'}</p>
+                    <p className={`px-3 py-1 rounded-full text-sm font-medium ${getRentalStatusColor(isCurrentlyRented)}`}>
+                        {isCurrentlyRented ? 'Trenutno iznajmljeno' : 'Dostupno za iznajmljivanje'}
+                    </p>
                 </div>
 
                 {/* Image Gallery */}
@@ -90,7 +89,7 @@ function getStatusColor(status:string | undefined) {
                         Pošalji poruku vlasniku
                     </button>
                 </div>
-                {item.ownerId !== session?.user?.id && <BookingForm itemId={item.id} />}
+                {item.ownerId !== session?.user?.id && !isCurrentlyRented && <BookingForm itemId={item.id} />}
             </div>
         </div>
     );

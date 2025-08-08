@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -26,11 +26,14 @@ export const useCreateBooking = () => {
   return useMutation({
     mutationKey: ['createBooking'],
     mutationFn: createBooking,
-    onError: (error) => {
+    onError: (error:AxiosError) => {
       console.error('Booking creation failed:', error);
+      if(error.status === 400){
+        toast.error('Već ste poslali zahtjev za iznajmljivanje')
+      }
     },
      onSuccess: () => {
-      toast.success('Item uspješno iznajmljen!');
+      toast.success('Poslan je zahtjev za iznajmljivanje');
       // Invalidate and refetch relevant queries
     },
   });

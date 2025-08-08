@@ -59,6 +59,67 @@ export async function PUT(
       }
     });
 
+    // Update the item's rental status based on the new booking status
+    if (status === 'APPROVED') {
+      // Check if this booking is currently active (overlaps with current date)
+      const isCurrentlyActive = new Date() >= booking.startDate && new Date() <= booking.endDate;
+      
+      if (isCurrentlyActive) {
+        await prisma.item.update({
+          where: { id: booking.itemId },
+          data: { isRented: true }
+        });
+      }
+    } else if (status === 'DECLINED') {
+      // Check if this was the only active booking for this item
+      const activeBookings = await prisma.booking.findMany({
+        where: {
+          itemId: booking.itemId,
+          status: 'APPROVED',
+          AND: [
+            { startDate: { lte: new Date() } },
+            { endDate: { gte: new Date() } }
+          ]
+        }
+      });
+
+      // If no active bookings remain, check if any bookings have ended
+      if (activeBookings.length === 0) {
+        const expiredBookings = await prisma.booking.findMany({
+          where: {
+            itemId: booking.itemId,
+            status: 'APPROVED',
+            endDate: { lt: new Date() } // End date is in the past
+          }
+        });
+
+        if (expiredBookings.length > 0) {
+          // Delete the item and all related data
+          await prisma.booking.deleteMany({
+            where: { itemId: booking.itemId }
+          });
+
+          await prisma.notification.deleteMany({
+            where: { itemId: booking.itemId }
+          });
+
+          await prisma.message.deleteMany({
+            where: { itemId: booking.itemId }
+          });
+
+          await prisma.item.delete({
+            where: { id: booking.itemId }
+          });
+        } else {
+          // Mark item as available if no expired bookings
+          await prisma.item.update({
+            where: { id: booking.itemId },
+            data: { isRented: false }
+          });
+        }
+      }
+    }
+
     // Create notification for the requester
     const notificationMessage = status === 'APPROVED' 
       ? `Vaša rezervacija za "${booking.item.title}" je odobrena!`

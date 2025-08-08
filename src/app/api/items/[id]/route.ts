@@ -20,14 +20,15 @@ export async function GET(
     return NextResponse.json({ error: 'Item nije pronađen.' }, { status: 404 });
   }
 
-  const statusOfBooking = await prisma.booking.findFirst({
-    where: {
-      itemId: id,
-    }
+  // Check if the item is currently rented using the isRented field
+  const isCurrentlyRented = item.isRented;
+
+  return NextResponse.json({
+    item,
+    isCurrentlyRented,
+    activeBooking: isCurrentlyRented ? {
+      // You could fetch the actual booking details here if needed
+      isRented: true
+    } : null
   });
-
-  const {status} = statusOfBooking || {};
-  
-
-  return NextResponse.json({item, status});
 }
