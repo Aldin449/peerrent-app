@@ -44,6 +44,10 @@ const Navbar = () => {
           Moje Rezervacije
         </Link>
 
+        <Link href="/conversations" className="hover:underline">
+          Razgovori
+        </Link>
+
         {session?.user && <NotificationWrapper />}
 
         {status === 'loading' ? (

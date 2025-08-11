@@ -89,3 +89,43 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, booking });
 }
+
+export async function GET(request: NextRequest) {
+    const { searchParams } = new URL(request.url);
+    const itemId = searchParams.get('itemId');
+    const status = searchParams.get('status');
+
+    if (!itemId) {
+        return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
+    }
+
+    const whereClause: any = { itemId };
+    
+    if (status) {
+        whereClause.status = status;
+    }
+
+    const bookings = await prisma.booking.findMany({
+        where: whereClause,
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            },
+            item: {
+                select: {
+                    id: true,
+                    title: true
+                }
+            }
+        },
+        orderBy: {
+            createdAt: 'desc'
+        }
+    });
+
+    return NextResponse.json(bookings);
+}

@@ -23,12 +23,5 @@ export async function GET(
   // Check if the item is currently rented using the isRented field
   const isCurrentlyRented = item.isRented;
 
-  return NextResponse.json({
-    item,
-    isCurrentlyRented,
-    activeBooking: isCurrentlyRented ? {
-      // You could fetch the actual booking details here if needed
-      isRented: true
-    } : null
-  });
+  return NextResponse.json(item);
 }

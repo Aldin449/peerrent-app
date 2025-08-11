@@ -18,8 +18,8 @@ model Item {
   isRented    Boolean   @default(false)
   createdAt   DateTime? @default(now())
   user        User      @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "item_ibfk_1")
-  message     Message[]
   Booking     Booking[]
+  messages    Message[]
 
   @@index(ownerId, map: "ownerId")
   @@index(createdAt(sort: Desc), map: "idx_created_at")
@@ -29,16 +29,22 @@ model Item {
 }
 
 model Message {
-  id        String    @id @default(cuid())
-  content   String    @db.Text
+  id        String   @id @default(cuid())
+  content   String   @db.Text
   senderId  String
+  recipientId String
   itemId    String
-  createdAt DateTime? @default(now())
-  user      User      @relation(fields: [senderId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "message_ibfk_1")
-  item      Item      @relation(fields: [itemId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "message_ibfk_2")
+  createdAt DateTime @default(now())
 
-  @@index([itemId], map: "itemId")
-  @@index([senderId], map: "senderId")
+  // Relations
+  sender    User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User     @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([createdAt])
 }
 
 model User {
@@ -48,9 +54,12 @@ model User {
   password     String
   createdAt    DateTime?      @default(now())
   item         Item[]
-  message      Message[]
   Booking      Booking[]
   Notification Notification[]
+  
+  // Message relations
+  messagesSent     Message[] @relation("MessageSender")
+  messagesReceived Message[] @relation("MessageRecipient")
 }
 
 model Booking {
@@ -71,21 +80,23 @@ model Booking {
 enum BookingStatus {
   PENDING
   APPROVED
-  DECLINED
+  REJECTED
+  CANCELLED
 }
 
 model Notification {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   message   String
-  bookingId String
-  itemId    String
-  startDate DateTime
-  endDate   DateTime
+  bookingId String?
+  itemId    String?
+  startDate DateTime?
+  endDate   DateTime?
   isSeen    Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  @@index([userId])
-}
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([createdAt])
+}
