@@ -18,7 +18,7 @@ interface MyItemsResponse {
   totalPages: number;
 }
 
-const getMyItems = async (page: number): Promise<MyItemsResponse> => {
+const getMyItems = async (page?: number): Promise<MyItemsResponse> => {
   const response = await axios.get('/api/items', {
     params: {
       page,
@@ -28,14 +28,14 @@ const getMyItems = async (page: number): Promise<MyItemsResponse> => {
   return response.data;
 }
 
-export const useMyItems = (page: number, initialData?: MyItemsResponse) => {
+export const useMyItems = (page?: number, initialData?: MyItemsResponse) => {
   return useQuery<MyItemsResponse>({
     queryKey: ['my-items', page],
     queryFn: () => getMyItems(page),
     placeholderData: (prev) => prev,
     staleTime: 1000 * 60,
     refetchOnWindowFocus: false,
-    enabled: page > 1 || !initialData,
+    enabled: page && page > 1 || !initialData,
     initialData: page === 1 && initialData ? initialData : undefined,
   });
 };

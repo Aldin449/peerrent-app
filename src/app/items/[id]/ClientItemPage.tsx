@@ -23,6 +23,7 @@ interface Item {
         name: string | null;
         email: string;
     };
+    phoneNumber:string
 }
 
 interface ClientItemPageProps {
@@ -74,6 +75,8 @@ export default function ClientItemPage({ item, isCurrentlyRented, currentUserId 
         itemOwnerId: item.ownerId
     });
 
+    console.log(item)
+
     return (
         <div className="min-h-screen bg-gray-50 py-10 px-4 flex gap-10">
             <div className="w-1/2 bg-white shadow-xl rounded-2xl p-8 space-y-6 h-fit">
@@ -92,7 +95,7 @@ export default function ClientItemPage({ item, isCurrentlyRented, currentUserId 
                     <ImageGallery images={JSON.parse(item.images)} title={item.title} />
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-gray-700">
                     <div>
                         <p className="text-sm text-gray-500">📍 Lokacija</p>
                         <p className="text-base font-medium">{item.location}</p>
@@ -100,6 +103,10 @@ export default function ClientItemPage({ item, isCurrentlyRented, currentUserId 
                     <div>
                         <p className="text-sm text-gray-500">💰 Cijena po danu</p>
                         <p className="text-base font-medium text-green-600">{item.pricePerDay} KM</p>
+                    </div>
+                     <div>
+                        <p className="text-sm text-gray-500">☎️ Telefon</p>
+                        <p className="text-base font-medium">{item.phoneNumber}</p>
                     </div>
                 </div>
 

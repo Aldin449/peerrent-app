@@ -10,6 +10,7 @@ interface NewItem {
     description: string;
     location: string;
     pricePerDay: number;
+    phoneNumber:string;
 }
 
 const AddItemForm = () => {
@@ -18,6 +19,7 @@ const AddItemForm = () => {
         description: '',
         location: '',
         pricePerDay: 0,
+        phoneNumber:''
     });
     const [images, setImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -99,6 +101,7 @@ const AddItemForm = () => {
         data.append('description', formData.description.trim());
         data.append('location', formData.location.trim());
         data.append('pricePerDay', String(formData.pricePerDay));
+        data.append('phoneNumber', formData.phoneNumber)
 
         // Only append images if there are any
         if (images.length > 0) {
@@ -114,6 +117,7 @@ const AddItemForm = () => {
                     description: '',
                     location: '',
                     pricePerDay: 0,
+                    phoneNumber:''
                 });
                 setImages([]);
                 setImagePreviews([]);
@@ -162,7 +166,7 @@ const AddItemForm = () => {
                 className="w-full border px-4 py-2 rounded"
             />
             <input
-                type="number"
+                type="text"
                 name="pricePerDay"
                 placeholder="Cijena po danu"
                 value={formData.pricePerDay}
@@ -171,7 +175,15 @@ const AddItemForm = () => {
                 min={0}
                 className="w-full border px-4 py-2 rounded"
             />
-
+            <input
+                type="text"
+                name="phoneNumber"
+                placeholder="Broj telefona"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                required
+                className="w-full border px-4 py-2 rounded"
+            />
             <div>
                 <input
                     type="file"

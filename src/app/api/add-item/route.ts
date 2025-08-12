@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
         const { fields, files } = await parseFormData(req);
 
         // validacija
-        const { title, description, location, pricePerDay } = fields;
+        const { title, description, location, pricePerDay, phoneNumber } = fields;
         if (!title || !description || !location || !pricePerDay) {
             return NextResponse.json(
                 { error: "Sva polja su obavezna" },
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
             description,
             location,
             pricePerDay: parseFloat(pricePerDay),
+            phoneNumber,
             images: imagePaths.length > 0 ? JSON.stringify(imagePaths) : null, // Store all images as JSON
             ownerId: session.user.id,
         };
