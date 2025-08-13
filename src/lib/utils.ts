@@ -136,29 +136,26 @@ export async function updateItemRentalStatusForItem(itemId: string) {
 
     // If there are expired bookings, delete the item completely
     if (expiredBooking) {
-      // Delete all related data in the correct order (due to foreign key constraints)
-      
-      // Delete all bookings for this item first
-      await prisma.booking.deleteMany({
-        where: { itemId }
+      // Umjesto brisanja, označite rezervacije kao završene
+      await prisma.booking.updateMany({
+        where: {
+          itemId,
+          status: 'APPROVED',
+          endDate: { lt: new Date() }
+        },
+        data: {
+          isCompleted: true,
+          completedAt: new Date()
+        }
       });
 
-      // Delete all notifications related to this item
-      await prisma.notification.deleteMany({
-        where: { itemId }
+      // Ažurirajte status stvari na "dostupna"
+      await prisma.item.update({
+        where: { id: itemId },
+        data: { isRented: false }
       });
 
-      // Delete all messages related to this item
-      await prisma.message.deleteMany({
-        where: { itemId }
-      });
-
-      // Finally delete the item itself
-      await prisma.item.delete({
-        where: { id: itemId }
-      });
-
-      return 'deleted'; // Return special value to indicate item was deleted
+      return 'completed'; // Return special value to indicate item was completed
     } else {
       // If no expired bookings, just update the rental status
       // Mark as rented if there's an active booking, available if not
@@ -193,21 +190,28 @@ export async function automaticCleanup() {
     });
 
     if (itemsToDelete.length > 0) {
-      // Delete in correct order due to foreign key constraints
-      await prisma.booking.deleteMany({
-        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+      // Umjesto brisanja, označite rezervacije kao završene
+      await prisma.booking.updateMany({
+        where: {
+          itemId: { in: itemsToDelete.map(item => item.id) },
+          status: 'APPROVED',
+          endDate: { lt: new Date() }
+        },
+        data: {
+          isCompleted: true,
+          completedAt: new Date()
+        }
       });
-      await prisma.notification.deleteMany({
-        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
-      });
-      await prisma.message.deleteMany({
-        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
-      });
-      await prisma.item.deleteMany({
-        where: { id: { in: itemsToDelete.map(item => item.id) } }
+
+      // Ažurirajte status stvari na "dostupna"
+      await prisma.item.updateMany({
+        where: {
+          id: { in: itemsToDelete.map(item => item.id) }
+        },
+        data: { isRented: false }
       });
       
-      console.log(`🔄 Automatic cleanup: Deleted ${itemsToDelete.length} expired items`);
+      console.log(`�� Automatic cleanup: Completed ${itemsToDelete.length} expired rentals`);
       return itemsToDelete.length;
     }
     

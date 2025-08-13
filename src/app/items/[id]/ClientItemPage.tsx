@@ -8,6 +8,7 @@ import MessageInterface from '../../../../components/MessageInterface';
 import InboxView from '../../../../components/InboxView';
 import Link from 'next/link';
 import { useState } from 'react';
+import { MessageCircle } from 'lucide-react';
 
 interface Item {
     id: string;
@@ -41,6 +42,7 @@ export default function ClientItemPage({ item, isCurrentlyRented, currentUserId 
     const searchParams = useSearchParams();
     const isOwner = currentUserId === item.ownerId;
     const [isOpen, setIsOpen] = useState(false);
+    const [isChatOpen, setIsChatOpen] = useState(false); // New state for non-owner chat
     // Get otherUserId from URL query parameters
     const otherUserIdFromUrl = searchParams.get('otherUserId');
 
@@ -78,95 +80,129 @@ export default function ClientItemPage({ item, isCurrentlyRented, currentUserId 
     console.log(item)
 
     return (
-        <div className="min-h-screen bg-gray-50 py-10 px-4 flex gap-10">
-            <div className="w-1/2 bg-white shadow-xl rounded-2xl p-8 space-y-6 h-fit">
-                <div className="space-y-2 flex justify-between items-center">
-                    <div>
-                        <h1 className="text-4xl font-extrabold text-gray-900">{item.title}</h1>
-                        <p className="text-gray-600 text-lg">{item.description}</p>
-                    </div>
-                    <p className={`px-3 py-1 rounded-full text-sm font-medium ${getRentalStatusColor(isCurrentlyRented)}`}>
-                        {isCurrentlyRented ? 'Trenutno iznajmljeno' : 'Dostupno za iznajmljivanje'}
-                    </p>
-                </div>
-
-                {/* Image Gallery */}
-                {item.images && item.images.length > 0 && (
-                    <ImageGallery images={JSON.parse(item.images)} title={item.title} />
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-gray-700">
-                    <div>
-                        <p className="text-sm text-gray-500">📍 Lokacija</p>
-                        <p className="text-base font-medium">{item.location}</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500">💰 Cijena po danu</p>
-                        <p className="text-base font-medium text-green-600">{item.pricePerDay} KM</p>
-                    </div>
-                     <div>
-                        <p className="text-sm text-gray-500">☎️ Telefon</p>
-                        <p className="text-base font-medium">{item.phoneNumber}</p>
-                    </div>
-                </div>
-
-                <div className="pt-4 border-t">
-                    <p className="text-sm text-gray-500">👤 Vlasnik</p>
-                    <p className="text-base font-medium">
-                        {item.user.name || 'Nepoznat'} – {item.user.email}
-                    </p>
-                </div>
-
-                {!isOwner && !isCurrentlyRented && <BookingForm itemId={item.id} />}
-            </div>
-            
-            <div className="w-1/2 space-y-6">
-                {/* Messages section - Show for both owners and non-owners */}
-                <div className="bg-white shadow-xl rounded-2xl p-6">
-                    <h3 className="text-xl font-semibold mb-4">
-                        {isOwner ? '📬 Inbox i Razgovori' : '💬 Razgovor s vlasnikom'}
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                        {isOwner 
-                            ? 'Prikazane su sve poruke od korisnika koji su zainteresirani za vaš predmet. Kliknite na korisnika da otvorite razgovor ispod.'
-                            : 'Imate pitanja o ovom predmetu? Pošaljite poruku vlasniku direktno.'
-                        }
-                    </p>
-
-                    {/* ========================================
-                        INBOX VIEW - UVIJEK PRIKAZAN ZA VLASNIKA
-                        ======================================== */}
-                    {isOwner && <InboxView isOpen={isOpen} setIsOpen={setIsOpen} />}
-                    
-                    {/* ========================================
-                        CHAT VIEW - PRIKAZAN KADA IMA SELEKTOVANOG KORISNIKA
-                        ======================================== */}
-                    {otherUserIdFromUrl && (
-                        <div className="mt-6">
-                            <MessageInterface
-                                itemId={item.id}
-                                itemTitle={item.title}
-                                otherUserId={messageInterfaceOtherUserId}
-                                otherUserName={messageInterfaceOtherUserName}
-                                otherUserEmail={messageInterfaceOtherUserEmail}
-                                isOpen={isOpen}
-                                setIsOpen={setIsOpen}
-                            />
+        <div className="min-h-screen bg-gray-50 py-10 px-4">
+            <div className="flex gap-10 mb-6">
+                <div className="w-1/2 bg-white shadow-xl rounded-2xl p-8 space-y-6 h-fit">
+                    <div className="space-y-2 flex justify-between items-center">
+                        <div>
+                            <h1 className="text-4xl font-extrabold text-gray-900">{item.title}</h1>
+                            <p className="text-gray-600 text-lg">{item.description}</p>
                         </div>
+                        <p className={`px-3 py-1 rounded-full text-sm font-medium ${getRentalStatusColor(isCurrentlyRented)}`}>
+                            {isCurrentlyRented ? 'Trenutno iznajmljeno' : 'Dostupno za iznajmljivanje'}
+                        </p>
+                    </div>
+
+                    {/* Image Gallery */}
+                    {item.images && item.images.length > 0 && (
+                        <ImageGallery images={JSON.parse(item.images)} title={item.title} />
                     )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-gray-700">
+                        <div>
+                            <p className="text-sm text-gray-500">📍 Lokacija</p>
+                            <p className="text-base font-medium">{item.location}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500">💰 Cijena po danu</p>
+                            <p className="text-base font-medium text-green-600">{item.pricePerDay} KM</p>
+                        </div>
+                         <div>
+                            <p className="text-sm text-gray-500">☎️ Telefon</p>
+                            <p className="text-base font-medium">{item.phoneNumber}</p>
+                        </div>
+                    </div>
+
+                    <div className="pt-4 border-t">
+                        <p className="text-sm text-gray-500">👤 Vlasnik</p>
+                        <p className="text-base font-medium">
+                            {item.user.name || 'Nepoznat'} – {item.user.email}
+                        </p>
+                    </div>
+
+                    {!isOwner && !isCurrentlyRented && <BookingForm itemId={item.id} />}
                 </div>
                 
-                {/* Contact info */}
-                <div className="bg-white shadow-xl rounded-2xl p-6">
-                    <h3 className="text-xl font-semibold mb-4">📞 Kontakt informacije</h3>
-                    <p className="text-gray-600">
-                        {isOwner 
-                            ? 'Korisnici mogu kontaktirati vas direktno kroz poruke iznad.'
-                            : 'Za više informacija o ovom predmetu, kontaktirajte vlasnika direktno.'
-                        }
-                    </p>
+                <div className="w-1/2 space-y-6">
+                    {/* Messages section - Show for both owners and non-owners */}
+                    <div className="bg-white shadow-xl rounded-2xl p-6">
+                        <h3 className="text-xl font-semibold mb-4">
+                            {isOwner ? '📬 Inbox i Razgovori' : '💬 Razgovor s vlasnikom'}
+                        </h3>
+                        <p className="text-gray-600 mb-4">
+                            {isOwner 
+                                ? 'Prikazane su sve poruke od korisnika koji su zainteresirani za vaš predmet. Kliknite na korisnika da otvorite razgovor ispod.'
+                                : 'Imate pitanja o ovom predmetu? Pošaljite poruku vlasniku direktno.'
+                            }
+                        </p>
+
+                        {/* ========================================
+                            INBOX VIEW - UVIJEK PRIKAZAN ZA VLASNIKA
+                            ======================================== */}
+                        {isOwner && <InboxView isOpen={isOpen} setIsOpen={setIsOpen} />}
+                        
+                        {/* ========================================
+                            CHAT VIEW - PRIKAZAN KADA IMA SELEKTOVANOG KORISNIKA
+                            ======================================== */}
+                        {otherUserIdFromUrl && (
+                            <div className="mt-6">
+                                <MessageInterface
+                                    itemId={item.id}
+                                    itemTitle={item.title}
+                                    otherUserId={messageInterfaceOtherUserId}
+                                    otherUserName={messageInterfaceOtherUserName}
+                                    otherUserEmail={messageInterfaceOtherUserEmail}
+                                    isOpen={isOpen}
+                                    setIsOpen={setIsOpen}
+                                />
+                            </div>
+                        )}
+
+                        {/* ========================================
+                            CHAT BUTTON FOR NON-OWNERS
+                            ======================================== */}
+                        {!isOwner && (
+                            <div className="mt-4">
+                                <button
+                                    onClick={() => setIsChatOpen(true)}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition flex items-center justify-center space-x-2"
+                                >
+                                    <MessageCircle size={20} />
+                                    <span>OTVORI CHAT</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Contact info */}
+                    <div className="bg-white shadow-xl rounded-2xl p-6">
+                        <h3 className="text-xl font-semibold mb-4">📞 Kontakt informacije</h3>
+                        <p className="text-gray-600">
+                            {isOwner 
+                                ? 'Korisnici mogu kontaktirati vas direktno kroz poruke iznad.'
+                                : 'Za više informacija o ovom predmetu, kontaktirajte vlasnika direktno.'
+                            }
+                        </p>
+                    </div>
                 </div>
             </div>
+
+            {/* ========================================
+                CHAT INTERFACE FOR NON-OWNERS - NOW BELOW THE CONTENT
+                ======================================== */}
+            {!isOwner && isChatOpen && (
+                <div className="bg-white shadow-xl rounded-2xl p-6">
+                    <MessageInterface
+                        itemId={item.id}
+                        itemTitle={item.title}
+                        otherUserId={item.ownerId}
+                        otherUserName={item.user.name || undefined}
+                        otherUserEmail={item.user.email}
+                        isOpen={isChatOpen}
+                        setIsOpen={setIsChatOpen}
+                    />
+                </div>
+            )}
         </div>
     );
 }

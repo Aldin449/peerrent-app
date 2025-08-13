@@ -33,11 +33,34 @@ async function getMyItems() {
   };
 }
 
+async function getNumberOfSuccessfulBookings() {
+  const session = await auth();
+
+  const completedBookings = await prisma.booking.findMany({
+    where:{
+      item:{ownerId:session?.user?.id},
+      status:'APPROVED',
+      isCompleted:true,
+    },
+    include:{
+      item:{select:{pricePerDay:true}}
+    }
+  })
+
+  let totalEarnings = 0;
+  completedBookings.forEach(booking => {
+    const days = Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24));
+    totalEarnings += days * booking.item.pricePerDay;
+  })
+
+  return {totalEarnings, numberOfCompletedBookings:completedBookings.length};
+}
 
 export default async function ProfilePage() {
 
   const { items, total, session } = await getMyItems();
-  console.log(items, total, session);
+  const {totalEarnings, numberOfCompletedBookings} = await getNumberOfSuccessfulBookings();
+  console.log(totalEarnings, numberOfCompletedBookings);
   // Mock podaci
   const mockData = {
     name: "Marko Petrović",
@@ -107,8 +130,8 @@ export default async function ProfilePage() {
             {mockData.name.charAt(0)}
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{mockData?.name}</h1>
-            <p className="text-gray-300">{mockData?.email}</p>
+            <h1 className="text-2xl font-bold">{session?.user?.name}</h1>
+            <p className="text-gray-300">{session?.user?.email}</p>
             <p className="text-gray-400">Član od: {mockData.joinDate}</p>
           </div>
         </div>
@@ -132,7 +155,7 @@ export default async function ProfilePage() {
       {/* Statistike */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-white p-6 rounded-lg shadow border text-center">
-          <div className="text-3xl font-bold text-blue-600">{mockData.stats.items}</div>
+          <div className="text-3xl font-bold text-blue-600">{total}</div>
           <div className="text-gray-600 flex items-center justify-center space-x-2 mt-2">
             <Package size={20} />
             <span>STVARI</span>
@@ -140,23 +163,23 @@ export default async function ProfilePage() {
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow border text-center">
-          <div className="text-3xl font-bold text-green-600">{mockData.stats.bookings}</div>
+          <div className="text-3xl font-bold text-green-600">{numberOfCompletedBookings}</div>
           <div className="text-gray-600 flex items-center justify-center space-x-2 mt-2">
             <Calendar size={20} />
-            <span>REZERVACIJE</span>
+            <span>USPJEŠNE REZERVACIJE</span>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow border text-center">
+        {/*<div className="bg-white p-6 rounded-lg shadow border text-center">
           <div className="text-3xl font-bold text-purple-600">{mockData.stats.messages}</div>
           <div className="text-gray-600 flex items-center justify-center space-x-2 mt-2">
             <MessageSquare size={20} />
             <span>PORUKE</span>
           </div>
-        </div>
+        </div>*/ }
       </div>
 
-      <ProfileTabs />
+      {/* <ProfileTabs items={items}/> */}
     </div>
   );
 }

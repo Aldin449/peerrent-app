@@ -1,8 +1,26 @@
 'use client';
 import { Bell } from "lucide-react";
-import { useState } from "react";
+import { FunctionComponent, useState } from "react";
 
-const ProfileTabs = () => {
+interface Item {
+    id: string;
+    title: string;
+    location: string;
+    pricePerDay: number;
+    phoneNumber: string | null;
+    isRented: boolean;
+    images: string[];
+    description: string;
+    ownerId: string;
+    createdAt: string;
+}
+
+interface ProfileTabsProps {
+    items: Item[];
+
+}
+
+const ProfileTabs:FunctionComponent<ProfileTabsProps> = ({items}) => {
     const [activeTab, setActiveTab] = useState('items');
 
     const mockData = {
@@ -91,15 +109,15 @@ const ProfileTabs = () => {
           {/* Tab sadržaj */}
           {activeTab === 'items' && (
             <div className="space-y-4">
-              {mockData.items.map((item) => (
+              {items.map((item:Item) => (
                 <div key={item.id} className="border rounded-lg p-4 flex items-center space-x-4">
                   <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
                     🔗
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold">{item.title}</h3>
-                    <p className="text-gray-600">{item.location} • €{item.price}/dan</p>
-                    <p className="text-sm text-gray-500">Status: {item.status}</p>
+                    <p className="text-gray-600">{item.location} • {item.pricePerDay}KM/dan</p>
+                   
                   </div>
                   <div className="flex space-x-2">
                     <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm">

@@ -73,6 +73,8 @@ model Booking {
   endDate   DateTime
   createdAt DateTime      @default(now())
   status    BookingStatus @default(PENDING)
+  isCompleted Boolean @default(false) 
+  completedAt DateTime?
 
   @@index([itemId])
   @@index([userId])

@@ -6,6 +6,7 @@ CREATE TABLE `Item` (
     `pricePerDay` DOUBLE NOT NULL,
     `location` VARCHAR(191) NOT NULL,
     `images` LONGTEXT NULL,
+    `phoneNumber` VARCHAR(191) NULL,
     `ownerId` VARCHAR(191) NOT NULL,
     `isRented` BOOLEAN NOT NULL DEFAULT false,
     `createdAt` DATETIME(3) NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -55,6 +56,8 @@ CREATE TABLE `Booking` (
     `endDate` DATETIME(3) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `status` ENUM('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
+    `isCompleted` BOOLEAN NOT NULL DEFAULT false,
+    `completedAt` DATETIME(3) NULL,
 
     INDEX `Booking_itemId_idx`(`itemId`),
     INDEX `Booking_userId_idx`(`userId`),
