@@ -10,6 +10,7 @@ declare module "next-auth" {
       id: string;
       email: string;
       name?: string | null;
+      isDeleted: boolean;
     }
   }
   
@@ -17,6 +18,7 @@ declare module "next-auth" {
     id: string;
     email: string;
     name?: string | null;
+    isDeleted: boolean;
   }
 }
 
@@ -25,6 +27,7 @@ declare module "next-auth/jwt" {
     id: string;
     email: string;
     name?: string | null;
+    isDeleted: boolean;
   }
 }
 
@@ -58,7 +61,10 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { 
+            email: credentials.email,
+            isDeleted: false
+          },
         });
 
         if (!user || !user.password) return null;
@@ -71,9 +77,26 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     jwt: async ({ token, user }) => {
       if (user) {
+        // Initial login - user data is available
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
+        token.isDeleted = false; // New users are never deleted
+      } else {
+        // Token refresh - check current status in database
+        try {
+          const currentUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { isDeleted: true }
+          });
+          
+          if (currentUser) {
+            token.isDeleted = currentUser.isDeleted;
+          }
+        } catch (error) {
+          console.error('Error checking user deletion status:', error);
+          token.isDeleted = true; // Assume deleted on error for security
+        }
       }
       return token;
     },
@@ -82,9 +105,10 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.email = token.email;
         session.user.name = token.name;
+        session.user.isDeleted = token.isDeleted;
       }
       return session;
-    },
+    }
   },
   pages: {
     signIn: '/login',

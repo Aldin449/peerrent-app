@@ -12,8 +12,11 @@ export async function GET(request: NextRequest) {
     }
 
     const owner = await prisma.user.findUnique({
-        where: { email: session?.user.email }
-    })
+      where: { 
+        id: session.user.id,
+        isDeleted: false
+      },
+    });
 
     if (!owner) {
         return NextResponse.json({ error: 'Korisnik nije pronađen.' }, { status: 404 });
@@ -24,7 +27,6 @@ export async function GET(request: NextRequest) {
             item: {
                 ownerId: owner.id
             }
-
         },
         orderBy: { createdAt: 'desc' },
         include: {

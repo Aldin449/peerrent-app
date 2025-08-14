@@ -10,7 +10,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({error:'Email i šifra su obavezni'}, {status:400});
         }
 
-        const existingUser = await prisma.user.findUnique({where:{email}});
+        const existingUser = await prisma.user.findUnique({
+            where: {
+                email,
+                isDeleted: false
+            }
+        });
 
         if (existingUser) {
             return NextResponse.json({error:'Korisnik već postoji'},{status:400})

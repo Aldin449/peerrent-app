@@ -284,41 +284,44 @@ export async function GET(request: NextRequest) {
     });
 
     // ========================================
-    // KORAK 8: DOHVAĆANJE PORUKA IZ BAZE
+    // KORAK 7: DOHVAĆANJE PORUKA
     // ========================================
-    // Prisma ORM generiše SQL SELECT naredbu na osnovu whereClause
+    // Sada dohvaćamo poruke iz baze podataka
     const messages = await prisma.message.findMany({
-      where: whereClause,  // Filtriramo poruke prema gore definisanim uslovima
+      where: {
+        ...whereClause,
+        AND: [
+          {
+            sender: {
+              isDeleted: false
+            }
+          },
+          {
+            recipient: {
+              isDeleted: false
+            }
+          }
+        ]
+      },
+      orderBy: { createdAt: 'asc' }, // Starije poruke prvo
       include: {
         // ========================================
         // DOHVAĆANJE POVEZANIH PODATAKA
         // ========================================
-        // include znači da ćemo dohvatiti i podatke o korisnicima
-        // Ovo je potrebno za prikaz u UI-u (ime, email)
         sender: {
           select: {
-            id: true,      // ID pošiljaoca
-            name: true,    // Ime pošiljaoca
-            email: true,   // Email pošiljaoca
-          },
+            id: true,
+            name: true,
+            email: true,
+          }
         },
         recipient: {
           select: {
-            id: true,      // ID primaoca
-            name: true,    // Ime primaoca
-            email: true,   // Email primaoca
-          },
+            id: true,
+            name: true,
+            email: true,
+          }
         },
-      },
-      // ========================================
-      // SORTIRANJE PORUKA
-      // ========================================
-      // orderBy: { createdAt: 'asc' } znači:
-      // - asc = ascending (rastuće) = od najstarije do najnovije poruke
-      // - desc = descending (opadajuće) = od najnovije do najstarije poruke
-      // Za chat je bolje asc jer želimo da vidimo razvoj razgovora
-      orderBy: {
-        createdAt: 'asc',
       },
     });
 

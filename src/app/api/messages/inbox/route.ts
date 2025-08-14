@@ -3,6 +3,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
 
+interface InboxItem {
+  itemId: string;
+  itemTitle: string;
+}
 // ========================================
 // API RUTA ZA INBOX - LISTA KORISNIKA KOJI SU POSLALI PORUKE
 // ========================================
@@ -30,6 +34,9 @@ export async function GET(req: NextRequest) {
     const messages = await prisma.message.findMany({
       where: {
         recipientId: userId,  // Samo poruke koje je korisnik PRIMIO
+        sender: {
+          isDeleted: false // Exclude deleted users
+        }
       },
       include: {
         sender: { 
@@ -37,7 +44,7 @@ export async function GET(req: NextRequest) {
             id: true,      // ID pošiljaoca
             name: true,    // Ime pošiljaoca
             email: true    // Email pošiljaoca
-          } 
+          }
         },
         item: { 
           select: { 
@@ -63,8 +70,8 @@ export async function GET(req: NextRequest) {
         // ========================================
         usersMap.set(senderId, {
           userId: senderId,                    // ID korisnika
-          userName: message.sender.name,       // Ime korisnika
-          userEmail: message.sender.email,     // Email korisnika
+          userName: message.sender?.name ?? '',       // Ime korisnika
+          userEmail: message.sender?.email ?? '',     // Email korisnika
           lastMessage: {                       // Podaci o zadnjoj poruci
             content: message.content,          // Sadržaj poruke
             createdAt: message.createdAt,      // Vrijeme poruke
@@ -97,7 +104,7 @@ export async function GET(req: NextRequest) {
         userData.messageCount += 1;
         
         // Dodajemo predmet ako već ne postoji
-        const itemExists = userData.items.find(item => item.itemId === message.itemId);
+        const itemExists = userData.items.find((item: InboxItem) => item.itemId === message.itemId);
         if (!itemExists) {
           userData.items.push({
             itemId: message.itemId,

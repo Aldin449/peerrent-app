@@ -138,7 +138,12 @@ async function getItems(page: number, search: string) {
   const [items, total] = await Promise.all([
     // Get the actual items with pagination
     prisma.item.findMany({
-      where: whereClause,        // Apply our search and availability filters
+      where: {
+        ...whereClause,        // Apply our search and availability filters
+        user: {
+          isDeleted: false     // Exclude items from deleted users
+        }
+      },
       skip,                      // Skip items for pagination
       take: limit,               // Take only 6 items per page
       orderBy: { createdAt: 'desc' }, // Show newest items first
@@ -150,7 +155,12 @@ async function getItems(page: number, search: string) {
     }),
     // Count total items for pagination calculation
     prisma.item.count({
-      where: whereClause,
+      where: {
+        ...whereClause,
+        user: {
+          isDeleted: false     // Exclude items from deleted users
+        }
+      },
     }),
   ]);
 

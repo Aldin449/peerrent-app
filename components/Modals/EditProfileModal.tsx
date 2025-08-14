@@ -9,10 +9,11 @@ import { useSession } from 'next-auth/react';
 type Props = { name: string; email: string; isOpen: boolean; setIsOpen: (isOpen: boolean) => void };
 
 const EditProfileModal = ({ name, email, isOpen, setIsOpen }: Props) => {
-    const { update: updateSession } = useSession();
+  const { update: updateSession } = useSession();
   const [formData, setFormData] = useState({ name, email });
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
+
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -50,7 +51,7 @@ const EditProfileModal = ({ name, email, isOpen, setIsOpen }: Props) => {
     <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <div className="flex items-start justify-between mb-4">
-          <h2 className="text-2xl font-bold">Uredi Profil</h2>
+          <h2 className="text-black text-2xl font-bold">Uredi Profil</h2>
           <button
             type="button"
             onClick={() => setIsOpen(false)}

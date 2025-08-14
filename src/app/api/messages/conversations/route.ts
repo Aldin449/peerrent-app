@@ -34,10 +34,29 @@ export async function GET(req: NextRequest) {
     // Prisma query - dohvaća poruke iz baze podataka
     const messages = await prisma.message.findMany({
       where: {
-        // OR znači "ILI" - jedna od ove dvije uslove mora biti ispunjena
-        OR: [
-          { senderId: userId },      // Poruke koje je korisnik POSLAO
-          { recipientId: userId }    // Poruke koje je korisnik PRIMIO
+        AND: [
+          {
+            // OR znači "ILI" - jedna od ove dvije uslove mora biti ispunjena
+            OR: [
+              { senderId: userId },      // Poruke koje je korisnik POSLAO
+              { recipientId: userId }    // Poruke koje je korisnik PRIMIO
+            ]
+          },
+          {
+            // Filter out messages from deleted users
+            OR: [
+              {
+                sender: {
+                  isDeleted: false
+                }
+              },
+              {
+                recipient: {
+                  isDeleted: false
+                }
+              }
+            ]
+          }
         ]
       },
       include: {
@@ -50,14 +69,14 @@ export async function GET(req: NextRequest) {
             id: true,      // ID pošiljaoca
             name: true,    // Ime pošiljaoca
             email: true    // Email pošiljaoca
-          } 
+          }
         },
         recipient: { 
           select: { 
             id: true,      // ID primaoca
             name: true,    // Ime primaoca
             email: true    // Email primaoca
-          } 
+          }
         },
         item: { 
           select: { 

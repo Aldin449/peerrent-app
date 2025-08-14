@@ -5,6 +5,7 @@ import { updateUser } from '@/app/actions/userActions'
 import EditProfileModal from '../Modals/EditProfileModal';
 import { format } from 'date-fns';
 import { hr } from 'date-fns/locale';
+import DeleteConfirmationModal from '../Modals/DeleteConfirmationModal';
 
 interface ProfileHeaderProps {
     user: {
@@ -16,6 +17,7 @@ interface ProfileHeaderProps {
 
 const ProfileHeader: FunctionComponent<ProfileHeaderProps> = ({ user }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
     if (!user) {
         return null;
@@ -37,6 +39,7 @@ const ProfileHeader: FunctionComponent<ProfileHeaderProps> = ({ user }) => {
                 </div>
             </div>
             <EditProfileModal name={user.name || ""} email={user.email || ""} isOpen={isOpen} setIsOpen={setIsOpen} />
+            <DeleteConfirmationModal title="Jeste li sigurni da želite obrisati svoj profil" isOpen={deleteModalOpen} setIsOpen={setDeleteModalOpen} />
             <div className="flex space-x-3 mt-4">
                 <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded flex items-center space-x-2" onClick={() => setIsOpen(!isOpen)}>
                     <Edit size={16} />
@@ -46,7 +49,10 @@ const ProfileHeader: FunctionComponent<ProfileHeaderProps> = ({ user }) => {
                     <Key size={16} />
                     <span>Promijeni Lozinku</span>
                 </button>
-                <button className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded flex items-center space-x-2">
+                <button 
+                    className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded flex items-center space-x-2"
+                    onClick={() => setDeleteModalOpen(true)}
+                >
                     <Trash2 size={16} />
                     <span>Obriši Account</span>
                 </button>

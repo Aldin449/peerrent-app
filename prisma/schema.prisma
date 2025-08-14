@@ -57,6 +57,8 @@ model User {
   item         Item[]
   Booking      Booking[]
   Notification Notification[]
+  isDeleted Boolean @default(false)
+  deletedAt DateTime?
   
   // Message relations
   messagesSent     Message[] @relation("MessageSender")
