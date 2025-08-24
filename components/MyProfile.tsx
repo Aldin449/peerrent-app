@@ -68,7 +68,8 @@ async function getNumberOfSuccessfulBookings() {
   let totalEarnings = 0;
   let currentMonthEarnings = 0;
   let monthlyEarnings: { [key: string]: number } = {};
-  let longestBooking = 0
+  let longestBooking = 0;
+  
   completedBookings.forEach(booking => {
     const days = Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24));
     const bookingEarnings = days * booking.item.pricePerDay;

@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import prisma from '../src/lib/prisma';
 import { auth } from '../auth';
 
+
 interface Item {
     id: string;
     ownerId: string;
@@ -79,7 +80,7 @@ export default async function MyItems({ searchParams }: MyItemsProps) {
     const params = await searchParams;
     const page = parseInt(params?.page || '1');
     const { items, total, totalPages } = await getMyItems(session.user.id, page);
-    console.log('MyItems', items);
+
     if (!items || items.length === 0) {
         return (
             <div className="max-w-4xl mx-auto mt-10 text-center text-gray-600">
@@ -94,10 +95,12 @@ export default async function MyItems({ searchParams }: MyItemsProps) {
         );
     }
 
+
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {items.map((item: Item) => (
+                {items.map((item: Item) => {
+                    return(
                     <Link
                         key={item.id}
                         href={`/items/${item.id}`}
@@ -127,7 +130,7 @@ export default async function MyItems({ searchParams }: MyItemsProps) {
                             Dodano: {format(new Date(item.createdAt), 'dd.MM.yyyy')}
                         </p>
                     </Link>
-                ))}
+                )})}
             </div>
             <Pagination 
                 currentPage={page} 

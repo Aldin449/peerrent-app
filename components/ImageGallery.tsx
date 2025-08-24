@@ -12,7 +12,6 @@ interface Props {
 
 const ImageGallery = ({ images, title }: Props) => {
   const [index, setIndex] = useState(-1);
-  console.log(images)
 
   return (
     <div className="space-y-4">

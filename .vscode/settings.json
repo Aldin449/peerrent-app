@@ -1,0 +1,9 @@
+{
+    "workbench.editor.autoLockGroups": {
+        "workbench.editor.chatSession": false,
+        "workbench.editor.processExplorer": false,
+        "terminalEditor": false,
+        "mainThreadWebview-browserPreview": false,
+        "mainThreadWebview-simpleBrowser.view": false
+    }
+}

@@ -15,14 +15,13 @@ export async function parseFormData(req: NextRequest): Promise<{ fields: any; fi
     const files: any = { images: [] };
 
     for (const [key, value] of formData.entries()) {
-      const isFileLike =
-        typeof value === 'object' &&
-        value !== null &&
-        // Blob/File imaju arrayBuffer()
-        'arrayBuffer' in value &&
-        typeof (value as AnyFile).size === 'number';
-
-      if (isFileLike) {
+      if (key === 'existingImages') {
+        // Handle existing images as array
+        if (!fields.existingImages) {
+          fields.existingImages = [];
+        }
+        fields.existingImages.push(value);
+      } else if (typeof value === 'object' && value !== null && 'arrayBuffer' in value) {
         const file = value as AnyFile;
 
         // 5MB limit
@@ -61,6 +60,6 @@ export async function parseFormData(req: NextRequest): Promise<{ fields: any; fi
     return { fields, files };
   } catch (error) {
     console.error('Error parsing form data:', error);
-    throw error;
+    throw new Error('Failed to parse form data');
   }
 }

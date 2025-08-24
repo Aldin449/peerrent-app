@@ -6,6 +6,7 @@ import EditProfileModal from '../Modals/EditProfileModal';
 import { format } from 'date-fns';
 import { hr } from 'date-fns/locale';
 import DeleteConfirmationModal from '../Modals/DeleteConfirmationModal';
+import ChangePasswordModal from '../Modals/ChangePasswordModal';
 
 interface ProfileHeaderProps {
     user: {
@@ -18,6 +19,7 @@ interface ProfileHeaderProps {
 const ProfileHeader: FunctionComponent<ProfileHeaderProps> = ({ user }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [changePasswordModal, setChangePasswordModal] = useState(false);
 
     if (!user) {
         return null;
@@ -40,12 +42,14 @@ const ProfileHeader: FunctionComponent<ProfileHeaderProps> = ({ user }) => {
             </div>
             <EditProfileModal name={user.name || ""} email={user.email || ""} isOpen={isOpen} setIsOpen={setIsOpen} />
             <DeleteConfirmationModal title="Jeste li sigurni da želite obrisati svoj profil" isOpen={deleteModalOpen} setIsOpen={setDeleteModalOpen} />
+            <ChangePasswordModal isOpen={changePasswordModal} setIsOpen={setChangePasswordModal}/>
             <div className="flex space-x-3 mt-4">
                 <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded flex items-center space-x-2" onClick={() => setIsOpen(!isOpen)}>
                     <Edit size={16} />
                     <span>Uredi Profil</span>
                 </button>
-                <button className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded flex items-center space-x-2">
+                <button className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded flex items-center space-x-2"
+                    onClick={() => setChangePasswordModal(true)}>
                     <Key size={16} />
                     <span>Promijeni Lozinku</span>
                 </button>

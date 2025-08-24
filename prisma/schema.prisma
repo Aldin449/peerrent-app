@@ -14,7 +14,7 @@ model Item {
   pricePerDay Float
   location    String
   images      String?   @db.LongText
-  phoneNumber String? 
+  phoneNumber String?
   ownerId     String
   isRented    Boolean   @default(false)
   createdAt   DateTime? @default(now())
@@ -30,17 +30,17 @@ model Item {
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  content   String   @db.Text
-  senderId  String
+  id          String   @id @default(cuid())
+  content     String   @db.Text
+  senderId    String
   recipientId String
-  itemId    String
-  createdAt DateTime @default(now())
+  itemId      String
+  createdAt   DateTime @default(now())
 
   // Relations
-  sender    User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
-  recipient User     @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  sender    User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient User @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  item      Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@index([itemId])
   @@index([senderId])
@@ -57,25 +57,27 @@ model User {
   item         Item[]
   Booking      Booking[]
   Notification Notification[]
-  isDeleted Boolean @default(false)
-  deletedAt DateTime?
-  
+  isDeleted    Boolean        @default(false)
+  deletedAt    DateTime?
+  emailVerified Boolean @default(false)
+  EmailVerificationToken EmailVerificationToken[]
   // Message relations
-  messagesSent     Message[] @relation("MessageSender")
-  messagesReceived Message[] @relation("MessageRecipient")
+  messagesSent       Message[]            @relation("MessageSender")
+  messagesReceived   Message[]            @relation("MessageRecipient")
+  PasswordResetToken PasswordResetToken[]
 }
 
 model Booking {
-  id        String        @id @default(uuid())
-  item      Item          @relation(fields: [itemId], references: [id])
-  itemId    String
-  user      User          @relation(fields: [userId], references: [id])
-  userId    String
-  startDate DateTime
-  endDate   DateTime
-  createdAt DateTime      @default(now())
-  status    BookingStatus @default(PENDING)
-  isCompleted Boolean @default(false) 
+  id          String        @id @default(uuid())
+  item        Item          @relation(fields: [itemId], references: [id])
+  itemId      String
+  user        User          @relation(fields: [userId], references: [id])
+  userId      String
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime      @default(now())
+  status      BookingStatus @default(PENDING)
+  isCompleted Boolean       @default(false)
   completedAt DateTime?
 
   @@index([itemId])
@@ -90,18 +92,40 @@ enum BookingStatus {
 }
 
 model Notification {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   message   String
   bookingId String?
   itemId    String?
   startDate DateTime?
   endDate   DateTime?
-  isSeen    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  isSeen    Boolean   @default(false)
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

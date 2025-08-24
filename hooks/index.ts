@@ -6,3 +6,4 @@ export { useCreateBooking } from './useCreateBooking';
 export { useMyItems } from './useMyItems';
 export { usePublicItems } from './usePublicItems';
 export { useDebounce } from './useDebounce';
+export { useItemRefresh } from './useItemRefresh';

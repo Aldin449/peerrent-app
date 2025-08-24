@@ -191,7 +191,7 @@ export default async function PublicItemList({ searchParams }: PublicItemListPro
 
   // Fetch items data using our helper function
   const { items, total, totalPages } = await getItems(page, search);
-
+  console.log(items)
   return (
     <div className="p-4 space-y-6">
       {/* Search Form */}
@@ -215,7 +215,8 @@ export default async function PublicItemList({ searchParams }: PublicItemListPro
       {/* Items Grid */}
       {/* Display items in a responsive grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((item: Item) => (
+        {items.map((item: Item) => {
+          return(
           // Each item is a clickable link that goes to the item detail page
           <Link
             key={item.id}
@@ -246,7 +247,7 @@ export default async function PublicItemList({ searchParams }: PublicItemListPro
 
             <p className='text-sm font-semibold mt-5'>👤 Vlasnik: {item.user.name}</p>
           </Link>
-        ))}
+        )})}
       </div>
 
       {/* Pagination Component */}
