@@ -83,16 +83,25 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     console.log('Final images array:', finalImages);
 
+    // Validate pricePerDay is a valid number
+    const price = parseFloat(pricePerDay);
+    if (isNaN(price) || price <= 0) {
+        return NextResponse.json(
+            { error: "Neispravna cijena - mora biti pozitivan broj" },
+            { status: 400 }
+        );
+    }
+
     const updatedItem = await prisma.item.update({
-      where: { id },
-      data: {
-        title: title.trim(),
-        description: description.trim(),
-        location: location.trim(),
-        pricePerDay: parseFloat(pricePerDay),
-        phoneNumber,
-        images: finalImages.length > 0 ? JSON.stringify(finalImages) : null,
-      },
+        where: { id },
+        data: {
+            title: title.trim(),
+            description: description.trim(),
+            location: location.trim(),
+            pricePerDay: price, // Use validated price instead of parseFloat directly
+            phoneNumber,
+            images: finalImages.length > 0 ? JSON.stringify(finalImages) : null,
+        },
     });
 
     // Osvježavamo sve relevantne putanje za automatsko osvježavanje

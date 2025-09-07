@@ -11,7 +11,7 @@ const MyProfilePage = () => {
                     <div className="text-center">
                         <h1 className="text-4xl sm:text-5xl font-bold mb-4">Moj Profil</h1>
                         <p className="text-xl text-purple-100 max-w-2xl mx-auto">
-                            Upravljajte svojim nalogom, predmetima i rezervacijama
+                            Upravljajte svojim nalogom
                         </p>
                     </div>
                 </div>

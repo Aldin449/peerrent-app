@@ -44,12 +44,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Korisnik nije pronađen' }, { status: 404 });
     }
 
-    const isRequestSent = await prisma.booking.findFirst({
-        where:{itemId:itemId, userId:user.id}
+    // Check if user already has a pending or approved booking for THIS specific item
+    const existingBookingForThisItem = await prisma.booking.findFirst({
+        where:{
+            itemId: itemId,
+            userId: user.id,
+            status: {
+                in: ['PENDING', 'APPROVED'] // Only check active bookings
+            }
+        }
     })
 
-    if (isRequestSent) {
-        return NextResponse.json({error:'Već ste poslali zahtjev'}, {status:400})
+    if (existingBookingForThisItem) {
+        return NextResponse.json({error:'Već imate aktivnu rezervaciju za ovaj predmet'}, {status:400})
     }
 
     const booking = await prisma.booking.create({

@@ -6,8 +6,13 @@ import PublicItemList from '../../components/PublicItemList';
 // searchParams is a Promise because Next.js 15 makes URL parameters async
 interface HomePageProps {
   searchParams?: Promise<{
-    page?: string;    // Current page number from URL (for pagination)
-    search?: string;  // Search term from URL (for filtering items)
+    page?: string;       // Current page number from URL (for pagination)
+    search?: string;     // Search term from URL (for filtering items)
+    minPrice?: string;   // Minimum price from URL
+    maxPrice?: string;   // Maximum price from URL
+    category?: string;   // Category filter from URL
+    sortBy?: string;     // Sort by field (price, date, title)
+    sortOrder?: string;  // Sort order (asc, desc)
   }>;
 }
 

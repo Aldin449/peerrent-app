@@ -11,6 +11,8 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [showResendLink, setShowResendLink] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,12 +27,66 @@ export default function Login() {
     });
     
     if (res?.error) {
-      setError('Neispravan email ili lozinka');
+      // Provjeri da li je problem sa verifikacijom emaila
+      try {
+        const checkUserResponse = await fetch('/api/auth/check-user-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email })
+        });
+        
+        if (checkUserResponse.ok) {
+          const userData = await checkUserResponse.json();
+          if (userData.exists && !userData.emailVerified) {
+            setError('Molimo verifikujte svoj email prije prijave. Provjerite svoju email poštu za verifikacijski link.');
+            setShowResendLink(true);
+          } else {
+            setError('Neispravan email ili lozinka');
+            setShowResendLink(false);
+          }
+        } else {
+          setError('Neispravan email ili lozinka');
+          setShowResendLink(false);
+        }
+      } catch {
+        setError('Neispravan email ili lozinka');
+      }
     } else {
       router.push('/');
     }
     
     setIsLoading(false);
+  };
+
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      setError('Molimo unesite email adresu');
+      return;
+    }
+
+    setIsResendingVerification(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setError('Verifikacijski email je poslat. Provjerite svoju email poštu.');
+        setShowResendLink(false);
+      } else {
+        setError(data.error || 'Greška pri slanju verifikacijskog emaila');
+      }
+    } catch {
+      setError('Greška pri slanju verifikacijskog emaila');
+    }
+
+    setIsResendingVerification(false);
   };
 
   return (
@@ -96,8 +152,20 @@ export default function Login() {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-600 text-sm font-medium">{error}</p>
+            <div className={`border rounded-lg p-4 ${error.includes('verifikujte') || error.includes('poslat') ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
+              <p className={`text-sm font-medium ${error.includes('verifikujte') || error.includes('poslat') ? 'text-blue-600' : 'text-red-600'}`}>
+                {error}
+              </p>
+              {showResendLink && (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={isResendingVerification}
+                  className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium underline disabled:opacity-50"
+                >
+                  {isResendingVerification ? 'Šaljem...' : 'Pošaljite ponovo verifikacijski email'}
+                </button>
+              )}
             </div>
           )}
 

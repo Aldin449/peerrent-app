@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
+import { BookingStatus } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
-  // AUTOMATIC CLEANUP: Delete expired items before showing user's items
-  // This ensures users only see their items that are actually available
+  // AUTOMATIC CLEANUP: Return expired items to available status
+  // This ensures items can be re-rented after their rental period ends
   try {
-    const itemsToDelete = await prisma.item.findMany({
+    const expiredItems = await prisma.item.findMany({
       where: {
         Booking: {
           some: {
@@ -19,22 +20,28 @@ export async function GET(request: NextRequest) {
       select: { id: true }
     });
 
-    if (itemsToDelete.length > 0) {
-      // Delete in correct order due to foreign key constraints
-      await prisma.booking.deleteMany({
-        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+    if (expiredItems.length > 0) {
+      // Mark items as available again (not rented)
+      await prisma.item.updateMany({
+        where: { id: { in: expiredItems.map(item => item.id) } },
+        data: { isRented: false }
       });
-      await prisma.notification.deleteMany({
-        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
-      });
-      await prisma.message.deleteMany({
-        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
-      });
-      await prisma.item.deleteMany({
-        where: { id: { in: itemsToDelete.map(item => item.id) } }
+
+      // Mark expired bookings as completed
+      await prisma.booking.updateMany({
+        where: { 
+          itemId: { in: expiredItems.map(item => item.id) },
+          status: 'APPROVED',
+          endDate: { lt: new Date() }
+        },
+        data: { 
+          status: BookingStatus.COMPLETED,
+          isCompleted: true,
+          completedAt: new Date()
+        }
       });
       
-      console.log(`Auto-deleted ${itemsToDelete.length} expired items from user items API`);
+      console.log(`Auto-returned ${expiredItems.length} expired items to available status from user items API`);
     }
   } catch (error) {
     console.error('Error in automatic cleanup:', error);

@@ -11,6 +11,7 @@ declare module "next-auth" {
       email: string;
       name?: string | null;
       isDeleted: boolean;
+      emailVerified: boolean;
     }
   }
   
@@ -19,6 +20,7 @@ declare module "next-auth" {
     email: string;
     name?: string | null;
     isDeleted: boolean;
+    emailVerified: boolean;
   }
 }
 
@@ -28,27 +30,15 @@ declare module "next-auth/jwt" {
     email: string;
     name?: string | null;
     isDeleted: boolean;
+    emailVerified: boolean;
   }
 }
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
   secret: process.env.NEXTAUTH_SECRET,
-  jwt: {
-    secret: process.env.NEXTAUTH_SECRET,
-    encode: ({ secret, token }) => {
-      // Simple encoding to avoid encryption issues
-      return Buffer.from(JSON.stringify(token)).toString('base64');
-    },
-    decode: ({ secret, token }) => {
-      try {
-        // Simple decoding
-        return JSON.parse(Buffer.from(token as string, 'base64').toString());
-      } catch {
-        return null;
-      }
-    },
-  },
+  // Remove the insecure custom JWT configuration
+  // NextAuth will use proper JWT signing by default
   providers: [
     CredentialsProvider({
       id: 'credentials',
@@ -70,7 +60,13 @@ export const authOptions: NextAuthOptions = {
         if (!user || !user.password) return null;
 
         const isValid = await compare(credentials.password, user.password);
-        return isValid ? user : null;
+        
+        // Provjeri da li je email verifikovan prije dozvoljavanja prijave
+        if (!isValid || !user.emailVerified) {
+          return null;
+        }
+        
+        return user;
       },
     }),
   ],
@@ -82,20 +78,23 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.name = user.name;
         token.isDeleted = false; // New users are never deleted
+        token.emailVerified = Boolean(user.emailVerified);
       } else {
         // Token refresh - check current status in database
         try {
           const currentUser = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { isDeleted: true }
+            select: { isDeleted: true, emailVerified: true }
           });
           
           if (currentUser) {
             token.isDeleted = currentUser.isDeleted;
+            token.emailVerified = Boolean(currentUser.emailVerified);
           }
         } catch (error) {
           console.error('Error checking user deletion status:', error);
           token.isDeleted = true; // Assume deleted on error for security
+          token.emailVerified = false; // Assume not verified on error for security
         }
       }
       return token;
@@ -106,6 +105,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email;
         session.user.name = token.name;
         session.user.isDeleted = token.isDeleted;
+        session.user.emailVerified = token.emailVerified;
       }
       return session;
     }

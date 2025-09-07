@@ -3,15 +3,15 @@ const { PrismaClient } = require('@prisma/client');
 // Create a new Prisma client instance to connect to the database
 const prisma = new PrismaClient();
 
-// Main function to clean up expired items
-// This script finds and deletes items whose rental period has ended
+// Main function to return expired items to available status
+// This script finds items whose rental period has ended and makes them available again
 async function cleanupExpiredItems() {
   try {
     console.log('Starting cleanup of expired items...');
 
-    // STEP 1: Find all items that should be deleted
+    // STEP 1: Find all items that should be returned to available status
     // These are items with approved bookings where the end date has passed
-    const itemsToDelete = await prisma.item.findMany({
+    const expiredItems = await prisma.item.findMany({
       where: {
         Booking: {
           some: {
@@ -35,58 +35,46 @@ async function cleanupExpiredItems() {
       }
     });
 
-    // STEP 2: Show what will be deleted (for transparency)
-    console.log(`Found ${itemsToDelete.length} items to delete:`);
-    itemsToDelete.forEach(item => {
+    // STEP 2: Show what will be returned to available status (for transparency)
+    console.log(`Found ${expiredItems.length} items to return to available status:`);
+    expiredItems.forEach(item => {
       console.log(`- ${item.title} (ID: ${item.id}) - Ended: ${item.Booking[0]?.endDate}`);
     });
 
-    // If no items to delete, exit early
-    if (itemsToDelete.length === 0) {
+    // If no items to process, exit early
+    if (expiredItems.length === 0) {
       console.log('No expired items found.');
       return;
     }
 
-    // STEP 3: Delete all related data in the correct order
-    // We must delete in this order due to database foreign key constraints
+    // STEP 3: Return items to available status and mark bookings as completed
     
-    // Delete bookings first - we can't delete an item if it has bookings
-    const deletedBookings = await prisma.booking.deleteMany({
+    // Mark items as available again (not rented)
+    const updatedItems = await prisma.item.updateMany({
       where: {
-        itemId: { in: itemsToDelete.map(item => item.id) }
+        id: { in: expiredItems.map(item => item.id) }
+      },
+      data: { isRented: false }
+    });
+
+    // Mark expired bookings as completed
+    const updatedBookings = await prisma.booking.updateMany({
+      where: {
+        itemId: { in: expiredItems.map(item => item.id) },
+        status: 'APPROVED',
+        endDate: { lt: new Date() }
+      },
+      data: {
+        status: 'COMPLETED',
+        isCompleted: true,
+        completedAt: new Date()
       }
     });
 
-    // Delete notifications related to these items
-    // Clean up any notifications about these items
-    const deletedNotifications = await prisma.notification.deleteMany({
-      where: {
-        itemId: { in: itemsToDelete.map(item => item.id) }
-      }
-    });
-
-    // Delete messages related to these items
-    // Clean up any chat messages about these items
-    const deletedMessages = await prisma.message.deleteMany({
-      where: {
-        itemId: { in: itemsToDelete.map(item => item.id) }
-      }
-    });
-
-    // Finally delete the items themselves
-    // Now it's safe to delete because all related data has been removed
-    const deletedItems = await prisma.item.deleteMany({
-      where: {
-        id: { in: itemsToDelete.map(item => item.id) }
-      }
-    });
-
-    // STEP 4: Show summary of what was deleted
+    // STEP 4: Show summary of what was processed
     console.log('\nCleanup completed successfully!');
-    console.log(`- Deleted ${deletedItems.count} items`);
-    console.log(`- Deleted ${deletedBookings.count} bookings`);
-    console.log(`- Deleted ${deletedNotifications.count} notifications`);
-    console.log(`- Deleted ${deletedMessages.count} messages`);
+    console.log(`- Returned ${updatedItems.count} items to available status`);
+    console.log(`- Marked ${updatedBookings.count} bookings as completed`);
 
   } catch (error) {
     // If anything goes wrong, show the error

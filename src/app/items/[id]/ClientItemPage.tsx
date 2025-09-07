@@ -25,6 +25,7 @@ interface Item {
     user: {
         name: string | null;
         email: string;
+        id: string;
     };
     phoneNumber:string | null
 }
@@ -68,6 +69,8 @@ export default function ClientItemPage({ item, isCurrentlyRented, currentUserId 
     const handleDelete = () => {
         setIsDeleteModalOpen(true);
     };
+
+    console.log(item);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
@@ -146,20 +149,21 @@ export default function ClientItemPage({ item, isCurrentlyRented, currentUserId 
                             </div>
 
                             {/* Owner Info */}
-                            <div className="pt-6 border-t border-gray-100">
-                                <div className="flex items-center space-x-3">
-                                    <div className="p-2 bg-gray-100 rounded-lg">
-                                        <User className="w-5 h-5 text-gray-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-500">Vlasnik</p>
-                                        <p className="font-semibold text-gray-900">
-                                            {item.user.name || 'Nepoznat'} – {item.user.email}
-                                        </p>
+                            <Link href={`/profile/${item.user.id}`} className='cursor-pointer'>
+                                <div className="pt-6 border-t border-gray-100">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="p-2 bg-gray-100 rounded-lg">
+                                            <User className="w-5 h-5 text-gray-600" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-500">Vlasnik</p>
+                                            <p className="font-semibold text-gray-900">
+                                                {item.user.name || 'Nepoznat'} – {item.user.email}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-
+                            </Link>
                             {/* Owner Actions - Edit & Delete */}
                             {isOwner && (
                                 <div className="pt-6 border-t border-gray-100 flex items-center justify-center">

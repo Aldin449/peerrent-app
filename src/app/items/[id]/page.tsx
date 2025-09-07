@@ -22,6 +22,7 @@ export default async function ItemPage({ params }: Props) {
         include: {
             user: {
                 select: {
+                    id: true,
                     name: true,
                     email: true,
                 },

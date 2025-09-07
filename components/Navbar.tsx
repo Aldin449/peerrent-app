@@ -28,7 +28,7 @@ const Navbar = () => {
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   return (
-    <nav className="bg-white border-b shadow-sm sticky top-0 z-50 backdrop-blur-sm bg-white/95">
+    <nav className="border-b shadow-sm sticky top-0 z-50 backdrop-blur-sm bg-white/95">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -40,39 +40,40 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden md:flex items-center space-x-2">
             <Link 
               href="/add-item" 
-              className="flex items-center px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+              className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium text-sm whitespace-nowrap"
             >
-              <Plus size={18} className="mr-2" />
+              <Plus size={16} className="mr-1" />
               Dodaj Item
             </Link>
 
             <Link
               href="/my-items"
               onMouseEnter={prefetchMyItems}
-              className="flex items-center px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+              className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium text-sm whitespace-nowrap"
             >
-              <Package size={18} className="mr-2" />
+              <Package size={16} className="mr-1" />
               Moji Itemi
             </Link>
 
             <Link 
               href="/my-bookings" 
-              className="flex items-center px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+              className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium text-sm whitespace-nowrap"
             >
-              <Calendar size={18} className="mr-2" />
-              Moje Rezervacije
+              <Calendar size={16} className="mr-1" />
+              Rezervacije
             </Link>
 
             <Link 
               href="/conversations" 
-              className="flex items-center px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium"
+              className="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 font-medium text-sm whitespace-nowrap"
             >
-              <MessageSquare size={18} className="mr-2" />
+              <MessageSquare size={16} className="mr-1" />
               Razgovori
             </Link>
+
 
             {session?.user && <NotificationWrapper />}
 
@@ -151,6 +152,7 @@ const Navbar = () => {
               <MessageSquare size={18} className="mr-3" />
               Razgovori
             </Link>
+
 
             {session?.user && (
               <div className="px-4 py-3">

@@ -1,191 +1,140 @@
 'use client';
-import { Bell } from "lucide-react";
+import { History, Heart, Activity, Package } from "lucide-react";
 import { FunctionComponent, useState } from "react";
+import RentalHistory from "./RentalHistory";
+import ActivityTimeline from "./ActivityTimeline";
+import UserRentals from "./UserRentals";
+import { useWishlist, useUserActivity } from "../hooks";
+import ItemCard from "./ItemCard";
 
 interface Item {
-    id: string;
-    title: string;
-    location: string;
-    pricePerDay: number;
-    phoneNumber: string | null;
-    isRented: boolean;
-    images: string[];
-    description: string;
-    ownerId: string;
-    createdAt: string;
+  id: string;
+  title: string;
+  location: string;
+  pricePerDay: number;
+  phoneNumber: string | null;
+  isRented: boolean;
+  images: string[];
+  description: string;
+  ownerId: string;
+  createdAt: string;
 }
 
 interface ProfileTabsProps {
-    items: Item[];
-
+  items: Item[];
 }
 
-const ProfileTabs:FunctionComponent<ProfileTabsProps> = ({items}) => {
-    const [activeTab, setActiveTab] = useState('items');
+const ProfileTabs: FunctionComponent<ProfileTabsProps> = ({ items }) => {
+  const [activeTab, setActiveTab] = useState('wishlist');
+  const { wishlist, isLoading: wishlistLoading } = useWishlist();
+  const { data: activityData, isLoading: activityLoading } = useUserActivity(10);
 
-    const mockData = {
-        items: [
-            {
-                id: 1,
-                title: 'Item 1',
-                location: 'Location 1',
-                price: 100,
-                status: 'Available' 
-            },
-            {
-                id: 2,
-                title: 'Item 2',
-                location: 'Location 2',
-                price: 200,
-                status: 'Rented'
-            }
-        ],
-        bookings: [
-            {
-                id: 1,
-                itemTitle: 'Item 1',
-                startDate: '2024-01-01',
-                endDate: '2024-01-05',
-                status: 'Confirmed'
-            },
-            {
-                id: 2,
-                itemTitle: 'Item 2',    
-                startDate: '2024-01-06',
-                endDate: '2024-01-10',
-                status: 'Cancelled'
-            }
-        ],
-        notifications: [
-            {
-                id: 1,
-                message: 'Notification 1',
-                time: '2024-01-01 12:00:00',
-                isRead: false
-            },
-        ]
-    }
 
-    return (
-        <div>
-            {/* Tab-ovi */}
+  return (
+    <div>
+      {/* Tab-ovi */}
       <div className="bg-white rounded-lg shadow border">
         <div className="border-b">
           <nav className="flex space-x-8 px-6">
             <button
-              onClick={() => setActiveTab('items')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'items' 
-                  ? 'border-blue-500 text-blue-600' 
+              onClick={() => setActiveTab('wishlist')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'wishlist'
+                  ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
+                }`}
             >
-              MOJE STVARI
+              LISTA ŽELJA
             </button>
             <button
-              onClick={() => setActiveTab('bookings')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'bookings' 
-                  ? 'border-blue-500 text-blue-600' 
+              onClick={() => setActiveTab('history')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'history'
+                  ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
+                }`}
             >
-              REZERVACIJE
+              HISTORIJA
             </button>
             <button
-              onClick={() => setActiveTab('notifications')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'notifications' 
-                  ? 'border-blue-500 text-blue-600' 
+              onClick={() => setActiveTab('rentals')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'rentals'
+                  ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
+                }`}
             >
-              NOTIFIKACIJE
+              MOJA IZNAJMLJIVANJA
+            </button>
+            <button
+              onClick={() => setActiveTab('activity')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'activity'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              AKTIVNOST
             </button>
           </nav>
         </div>
 
         <div className="p-6">
           {/* Tab sadržaj */}
-          {activeTab === 'items' && (
-            <div className="space-y-4">
-              {items.map((item:Item) => (
-                <div key={item.id} className="border rounded-lg p-4 flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
-                    🔗
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{item.title}</h3>
-                    <p className="text-gray-600">{item.location} • {item.pricePerDay}KM/dan</p>
-                   
-                  </div>
-                  <div className="flex space-x-2">
-                    <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                      Uredi
-                    </button>
-                    <button className="bg-red-600 text-white px-3 py-1 rounded text-sm">
-                      Obriši
-                    </button>
-                  </div>
+          {activeTab === 'wishlist' && (
+            <div>
+              {wishlistLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-500 mt-2">Učitavanje liste želja...</p>
                 </div>
-              ))}
+              ) : wishlist.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">💝</div>
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                    Vaša lista želja je prazna
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    Dodajte stavke koje vas zanimaju klikom na srce
+                  </p>
+                  <a
+                    href="/"
+                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Pretraži stavke
+                  </a>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {wishlist.map((wishlistItem) => (
+                    <ItemCard key={wishlistItem.id} item={wishlistItem.item} />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {activeTab === 'bookings' && (
-            <div className="space-y-4">
-              {mockData.bookings.map((booking) => (
-                <div key={booking.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold">{booking.itemTitle}</h3>
-                      <p className="text-gray-600">
-                        🗓️ {booking.startDate} - {booking.endDate}
-                      </p>
-                      <p className="text-sm text-gray-500">Status: {booking.status}</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                        Detalji
-                      </button>
-                      <button className="bg-red-600 text-white px-3 py-1 rounded text-sm">
-                        Otkaži
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          {activeTab === 'history' && (
+            <div>
+              <RentalHistory />
             </div>
           )}
 
-          {activeTab === 'notifications' && (
-            <div className="space-y-4">
-              {mockData.notifications.map((notification) => (
-                <div key={notification.id} className={`border rounded-lg p-4 ${
-                  !notification.isRead ? 'bg-blue-50 border-blue-200' : ''
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Bell size={20} className="text-blue-600" />
-                      <div>
-                        <p className="font-medium">{notification.message}</p>
-                        <p className="text-sm text-gray-500">{notification.time}</p>
-                      </div>
-                    </div>
-                    {!notification.isRead && (
-                      <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                        Označi kao pročitano
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+          {activeTab === 'rentals' && (
+            <div>
+              <UserRentals />
             </div>
           )}
+
+          {activeTab === 'activity' && (
+            <div>
+              <ActivityTimeline 
+                activities={activityData?.activities || []} 
+                isLoading={activityLoading}
+              />
+            </div>
+          )}
+
         </div>
       </div>
-        </div>
-    )
+    </div>
+  )
 }
 
 export default ProfileTabs;

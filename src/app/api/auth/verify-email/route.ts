@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   // Verifikuj korisnika
   await prisma.user.update({
     where: { id: verificationToken.userId },
-    data: { emailVerified: new Date() },
+    data: { emailVerified: true },
   });
 
   // Obriši token

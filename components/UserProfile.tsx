@@ -11,7 +11,6 @@ async function getUserProfile() {
   return {
     name: session.user.name,
     email: session.user.email,
-    image: session.user.image,
   };
 }
 
@@ -31,13 +30,11 @@ export default async function UserProfile() {
       <span className="text-sm hidden sm:inline">
         Zdravo, {user.name || user.email}
       </span>
-      {user.image && (
-        <img
-          src={user.image}
-          alt={user.name || 'User'}
-          className="w-8 h-8 rounded-full"
-        />
-      )}
+      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+        <span className="text-gray-600 font-semibold text-sm">
+          {user.name?.charAt(0).toUpperCase() || 'U'}
+        </span>
+      </div>
       <form action="/api/auth/signout" method="POST">
         <button
           type="submit"

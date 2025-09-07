@@ -1,9 +1,13 @@
 export { useItemMessages } from './useItemMessages';
 export { useSendMessage } from './useSendMessage';
 export { useNotifications } from './useNotifications';
-export { useCreateItems } from './useCreateItems';
+export { useCreateItem } from './useCreateItems';
 export { useCreateBooking } from './useCreateBooking';
 export { useMyItems } from './useMyItems';
-export { usePublicItems } from './usePublicItems';
+export { usePaginatedPublicItems } from './usePublicItems';
 export { useDebounce } from './useDebounce';
 export { useItemRefresh } from './useItemRefresh';
+export { useWishlist } from './useWishlist';
+export { useProfile, useUpdateProfile, useUploadProfilePicture } from './useProfile';
+export { useUserActivity } from './useUserActivity';
+export { useTrustScore } from './useTrustScore';

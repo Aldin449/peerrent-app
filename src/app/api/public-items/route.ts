@@ -3,10 +3,10 @@ import prisma from '@/lib/prisma';
 import { BookingStatus } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
-  // AUTOMATIC CLEANUP: Delete expired items before showing public items
-  // This ensures users only see items that are actually available
+  // AUTOMATIC CLEANUP: Return expired items to available status
+  // This ensures items can be re-rented after their rental period ends
   try {
-    const itemsToDelete = await prisma.item.findMany({
+    const expiredItems = await prisma.item.findMany({
       where: {
         Booking: {
           some: {
@@ -18,22 +18,28 @@ export async function GET(request: NextRequest) {
       select: { id: true }
     });
 
-    if (itemsToDelete.length > 0) {
-      // Delete in correct order due to foreign key constraints
-      await prisma.booking.deleteMany({
-        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
+    if (expiredItems.length > 0) {
+      // Mark items as available again (not rented)
+      await prisma.item.updateMany({
+        where: { id: { in: expiredItems.map(item => item.id) } },
+        data: { isRented: false }
       });
-      await prisma.notification.deleteMany({
-        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
-      });
-      await prisma.message.deleteMany({
-        where: { itemId: { in: itemsToDelete.map(item => item.id) } }
-      });
-      await prisma.item.deleteMany({
-        where: { id: { in: itemsToDelete.map(item => item.id) } }
+
+      // Mark expired bookings as completed
+      await prisma.booking.updateMany({
+        where: { 
+          itemId: { in: expiredItems.map(item => item.id) },
+          status: 'APPROVED',
+          endDate: { lt: new Date() }
+        },
+        data: { 
+          status: BookingStatus.COMPLETED,
+          isCompleted: true,
+          completedAt: new Date()
+        }
       });
       
-      console.log(`Auto-deleted ${itemsToDelete.length} expired items from public items API`);
+      console.log(`Auto-returned ${expiredItems.length} expired items to available status from public items API`);
     }
   } catch (error) {
     console.error('Error in automatic cleanup:', error);
@@ -43,30 +49,66 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || '6', 10);
   const search = searchParams.get('search')?.trim() || '';
+  const minPrice = searchParams.get('minPrice');
+  const maxPrice = searchParams.get('maxPrice');
+  const category = searchParams.get('category');
+  const sortBy = searchParams.get('sortBy') || 'createdAt';
+  const sortOrder = searchParams.get('sortOrder') || 'desc';
 
   const skip = (page - 1) * limit;
 
-  // Optimize search query
-  const whereClause = search
-    ? {
-        AND: [
-          {
-            OR: [
-              { title: { contains: search, mode: 'insensitive' as const } },
-              { location: { contains: search, mode: 'insensitive' as const} },
-              { description: { contains: search, mode: 'insensitive' as const} },
-            ],
-          },
-          {
-            // Only show items that are not rented
-            isRented: false
-          }
-        ]
-      }
-    : {
-        // Only show items that are not rented
-        isRented: false
-      };
+  // Build the database query conditions based on search term and filters
+  const whereConditions: any[] = [];
+  
+  // Add search condition
+  if (search) {
+    whereConditions.push({
+      OR: [
+        { title: { contains: search } },
+        { location: { contains: search } },
+        { description: { contains: search } },
+      ],
+    });
+  }
+  
+  // Add price range conditions
+  if (minPrice || maxPrice) {
+    const priceCondition: any = {};
+    if (minPrice) priceCondition.gte = parseFloat(minPrice);
+    if (maxPrice) priceCondition.lte = parseFloat(maxPrice);
+    whereConditions.push({ pricePerDay: priceCondition });
+  }
+  
+  // Add category condition
+  if (category) {
+    whereConditions.push({ category });
+  }
+  
+  // Always exclude rented items
+  whereConditions.push({ isRented: false });
+  
+  // Always exclude items from deleted users
+  whereConditions.push({
+    user: { isDeleted: false }
+  });
+
+  const whereClause = whereConditions.length > 0 ? { AND: whereConditions } : {};
+
+  // Build sorting options
+  const orderBy: any = {};
+  switch (sortBy) {
+    case 'price':
+      orderBy.pricePerDay = sortOrder;
+      break;
+    case 'date':
+      orderBy.createdAt = sortOrder;
+      break;
+    case 'title':
+      orderBy.title = sortOrder;
+      break;
+    default:
+      orderBy.createdAt = 'desc';
+  }
 
   try {
     const [items, total] = await Promise.all([
@@ -74,10 +116,17 @@ export async function GET(request: NextRequest) {
         where: whereClause,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
           user: {
-            select: { name: true, email: true },
+            select: { 
+              name: true, 
+              email: true,
+              averageRating: true,
+              ratingsCount: true,
+              emailVerified: true,
+              createdAt: true
+            },
           },
         },
       }),

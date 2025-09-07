@@ -16,8 +16,6 @@ export const usePaginatedPublicItems = (page: number, search: string) => {
   return useQuery({
     queryKey: ['public-items', page, search],
     queryFn: () => fetchPaginatedItems(page, search),
-    placeholderData: (prev) => prev,
-    staleTime: 1000 * 60,
-    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

@@ -10,7 +10,8 @@ interface NewItem {
     description: string;
     location: string;
     pricePerDay: number;
-    phoneNumber:string;
+    phoneNumber: string;
+    category: string;
 }
 
 const AddItemForm = () => {
@@ -19,7 +20,8 @@ const AddItemForm = () => {
         description: '',
         location: '',
         pricePerDay: 0,
-        phoneNumber:''
+        phoneNumber: '',
+        category: ''
     });
     const [images, setImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -27,7 +29,7 @@ const AddItemForm = () => {
 
     const { mutate, isPending } = useCreateItem();
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -101,7 +103,8 @@ const AddItemForm = () => {
         data.append('description', formData.description.trim());
         data.append('location', formData.location.trim());
         data.append('pricePerDay', String(formData.pricePerDay));
-        data.append('phoneNumber', formData.phoneNumber)
+        data.append('phoneNumber', formData.phoneNumber);
+        data.append('category', formData.category);
 
         // Only append images if there are any
         if (images.length > 0) {
@@ -117,7 +120,8 @@ const AddItemForm = () => {
                     description: '',
                     location: '',
                     pricePerDay: 0,
-                    phoneNumber:''
+                    phoneNumber: '',
+                    category: ''
                 });
                 setImages([]);
                 setImagePreviews([]);
@@ -134,7 +138,7 @@ const AddItemForm = () => {
         return () => {
             imagePreviews.forEach(url => URL.revokeObjectURL(url));
         };
-    }, []);
+    }, [imagePreviews]); // Add imagePreviews to dependency array to prevent memory leaks
 
     return (
         <form onSubmit={handleSubmit} className="max-w-md mx-auto mt-10 space-y-4">
@@ -184,6 +188,24 @@ const AddItemForm = () => {
                 required
                 className="w-full border px-4 py-2 rounded"
             />
+            <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+                className="w-full border px-4 py-2 rounded"
+            >
+                <option value="">Odaberite kategoriju</option>
+                <option value="electronics">Elektronika</option>
+                <option value="tools">Alati</option>
+                <option value="vehicles">Vozila</option>
+                <option value="furniture">Namještaj</option>
+                <option value="sports">Sport</option>
+                <option value="clothing">Odjeća</option>
+                <option value="books">Knjige</option>
+                <option value="home">Kuća i vrt</option>
+                <option value="other">Ostalo</option>
+            </select>
             <div>
                 <input
                     type="file"

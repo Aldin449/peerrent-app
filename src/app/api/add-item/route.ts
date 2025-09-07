@@ -26,10 +26,19 @@ export async function POST(req: NextRequest) {
         const { fields, files } = await parseFormData(req);
 
         // validacija
-        const { title, description, location, pricePerDay, phoneNumber } = fields;
-        if (!title || !description || !location || !pricePerDay) {
+        const { title, description, location, pricePerDay, phoneNumber, category } = fields;
+        if (!title || !description || !location || !pricePerDay || !category) {
             return NextResponse.json(
                 { error: "Sva polja su obavezna" },
+                { status: 400 }
+            );
+        }
+
+        // Validate pricePerDay is a valid number
+        const price = parseFloat(pricePerDay);
+        if (isNaN(price) || price <= 0) {
+            return NextResponse.json(
+                { error: "Neispravna cijena - mora biti pozitivan broj" },
                 { status: 400 }
             );
         }
@@ -50,8 +59,9 @@ export async function POST(req: NextRequest) {
             title,
             description,
             location,
-            pricePerDay: parseFloat(pricePerDay),
+            pricePerDay: price, // Use validated price instead of parseFloat directly
             phoneNumber,
+            category,
             images: imagePaths.length > 0 ? JSON.stringify(imagePaths) : null, // Store all images as JSON
             ownerId: session.user.id,
         };

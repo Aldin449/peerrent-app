@@ -2,6 +2,7 @@ import { Edit, Key, Trash2, Package, Calendar, MessageSquare, Bell } from 'lucid
 import { auth } from '../auth';
 import prisma from '@/lib/prisma';
 import ProfileHeader from './ProfileComponents/ProfileHeader';
+import ProfileTabs from './ProfileTabs';
 import { format } from 'date-fns';
 
 async function getMyItems() {
@@ -26,7 +27,13 @@ async function getMyItems() {
       select: {
         createdAt: true,
         name: true,
-        email: true
+        email: true,
+        bio: true,
+        phoneNumber: true,
+        location: true,
+        profilePicture: true,
+        averageRating: true,
+        ratingsCount: true
       }
     })
   ])
@@ -183,7 +190,7 @@ export default async function ProfilePage() {
           <div className="text-3xl font-bold text-teal-600">{currentMonthEarnings} KM</div>
           <div className="text-gray-600 flex items-center justify-center space-x-2 mt-2">
             💰
-            <span className='pl-2'>ZARADA OVOG MESECA</span>
+            <span className='pl-2'>ZARADA OVOG MJESECA</span>
           </div>
         </div>
 
@@ -191,12 +198,12 @@ export default async function ProfilePage() {
           <div className="text-3xl font-bold text-yellow-600">{bestMonthEarnings} KM</div>
           <div className="text-gray-600 flex items-center justify-center space-x-2 mt-2">
             💰
-            <span className='pl-2'>NAJBOLJI MESEC {bestMonthFormatted ? `- ${bestMonthFormatted}` : ''}</span>
+            <span className='pl-2'>NAJBOLJI MJESEC {bestMonthFormatted ? `- ${bestMonthFormatted}` : ''}</span>
           </div>
         </div>
       </div>
 
-      {/* <ProfileTabs items={items}/> */}
+      <ProfileTabs items={items}/>
     </div>
   );
 }

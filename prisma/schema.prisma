@@ -15,18 +15,21 @@ model Item {
   location    String
   images      String?   @db.LongText
   phoneNumber String?
+  category    String?   // Category of the item (electronics, tools, vehicles, etc.)
   ownerId     String
   isRented    Boolean   @default(false)
   createdAt   DateTime? @default(now())
   user        User      @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "item_ibfk_1")
   Booking     Booking[]
   messages    Message[]
+  wishlists   Wishlist[] // Items can be in multiple wishlists
 
   @@index(ownerId, map: "ownerId")
   @@index(createdAt(sort: Desc), map: "idx_created_at")
   @@index([title, location], map: "idx_search")
   @@index(pricePerDay, map: "idx_price")
   @@index(isRented, map: "idx_is_rented")
+  @@index(category, map: "idx_category")
 }
 
 model Message {
@@ -53,6 +56,10 @@ model User {
   email        String         @unique(map: "email")
   name         String?
   password     String
+  profilePicture String?      // URL to profile picture
+  bio          String?        @db.Text // User bio/description
+  phoneNumber  String?        // User's phone number
+  location     String?        // User's location
   createdAt    DateTime?      @default(now())
   item         Item[]
   Booking      Booking[]
@@ -65,6 +72,11 @@ model User {
   messagesSent       Message[]            @relation("MessageSender")
   messagesReceived   Message[]            @relation("MessageRecipient")
   PasswordResetToken PasswordResetToken[]
+  ratingsGiven   UserRating[] @relation("RatingGiven")    // Rating-ovi koje je user dao
+  ratingsReceived UserRating[] @relation("RatingReceived") // Rating-ovi koje je user dobio
+  averageRating Float? @default(0)
+  ratingsCount  Int    @default(0)
+  wishlists     Wishlist[] // Users can have multiple wishlists
 }
 
 model Booking {
@@ -89,6 +101,7 @@ enum BookingStatus {
   APPROVED
   REJECTED
   CANCELLED
+  COMPLETED
 }
 
 model Notification {
@@ -128,4 +141,39 @@ model EmailVerificationToken {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model UserRating {
+  id        String   @id @default(cuid())
+  rating    Int      // 1-5 zvezdice
+  comment   String?  // Opcioni komentar
+  createdAt DateTime @default(now())
+  
+  // Veze
+  fromUserId String // Ko je ostavio rating
+  toUserId   String // Kome je rating
+  fromUser   User   @relation("RatingGiven", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser     User   @relation("RatingReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+  
+  // Indeksi
+  @@unique([fromUserId, toUserId]) // Jedan user može da oceni drugog usera samo jednom
+  @@index([toUserId]) // Brže traženje rating-ova za određenog usera
+  @@index([fromUserId])
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String   // Ko je dodao u wishlist
+  itemId    String   // Koji item je u wishlist-u
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  
+  // Indeksi
+  @@unique([userId, itemId]) // Jedan user može da doda isti item samo jednom u wishlist
+  @@index([userId]) // Brže traženje wishlist-a za određenog usera
+  @@index([itemId]) // Brže traženje ko je dodao item u wishlist
+  @@index([createdAt]) // Sortiranje po datumu dodavanja
 }
