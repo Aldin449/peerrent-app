@@ -207,7 +207,7 @@ export default async function PublicItemList({ searchParams }: PublicItemListPro
   // Wait for searchParams to resolve (Next.js 15 makes this async)
   const params = await searchParams;
   // Get current page from URL, default to page 1 if not specified
-  const page = parseInt(params?.page || '1');
+  const page = parseInt(params?.page || '1', 10) || 1;
   // Get search term from URL, default to empty string if not specified
   const search = params?.search || '';
   // Get filter parameters from URL
@@ -219,7 +219,6 @@ export default async function PublicItemList({ searchParams }: PublicItemListPro
 
   // Fetch items data using our helper function
   const { items, total, totalPages } = await getItems(page, search, minPrice, maxPrice, category, sortBy, sortOrder);
-  console.log(items)
   return (
     <div className="p-4 space-y-6">
       {/* Search Form */}

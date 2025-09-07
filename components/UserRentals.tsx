@@ -7,15 +7,20 @@ import { Calendar, MapPin, User, Euro, Clock, CheckCircle, XCircle, AlertCircle,
 import { useState, useMemo } from 'react';
 
 export default function UserRentals() {
-  const { data, isLoading, error } = useUserRentals();
+  // State za paginaciju - korisnik može mijenjati stranicu
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState('all'); // all, active, completed, cancelled
+  
+  // Hook za dohvatanje podataka sa paginacijom
+  const { data, isLoading, error } = useUserRentals(currentPage, itemsPerPage);
 
-  // Filter data based on status
+  // Filter data based on status - koristi novu strukturu podataka
   const filteredRentals = useMemo(() => {
-    if (!data?.allRentals) return [];
+    if (!data?.rentals) return [];
     
-    const rentals = data.allRentals;
-    
+    const rentals = data.rentals;
+    console.log('Trenutna stranica rezervacija:', rentals);
     switch (statusFilter) {
       case 'active':
         return rentals.filter(rental => rental.status === 'PENDING' || rental.status === 'APPROVED');
@@ -26,7 +31,21 @@ export default function UserRentals() {
       default:
         return rentals;
     }
-  }, [data?.allRentals, statusFilter]);
+  }, [data?.rentals, statusFilter]);
+
+  // Funkcija za promjenu stranice
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    // Resetuj filter kada mijenjaš stranicu
+    setStatusFilter('all');
+  };
+
+  // Funkcija za promjenu broja stavki po stranici
+  const handleItemsPerPageChange = (newLimit: number) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1); // Resetuj na prvu stranicu
+    setStatusFilter('all');
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -94,7 +113,7 @@ export default function UserRentals() {
     );
   }
 
-  const rentals = data?.allRentals || [];
+  const rentals = data?.rentals || [];
 
   if (rentals.length === 0) {
     return (
@@ -140,10 +159,25 @@ export default function UserRentals() {
             </select>
           </div>
 
+          {/* Items per page selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Prikaži:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+              className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+
           {/* Stats */}
           <div className="flex gap-2 text-sm">
             <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
-              {filteredRentals.length} od {data?.totalRentals} ukupno
+              {filteredRentals.length} od {data?.pagination.totalRentals} ukupno
             </div>
           </div>
         </div>
@@ -177,7 +211,7 @@ export default function UserRentals() {
       </div>
 
       {/* Rentals List */}
-      <div className="space-y-4">
+      <div className={`space-y-4 ${filteredRentals.length > 3 ? 'h-[710px] overflow-y-auto' : ''}`}>
         {filteredRentals.map((rental) => (
           <div
             key={rental.id}
@@ -245,8 +279,8 @@ export default function UserRentals() {
                   </div>
                   
                   <div className="flex items-center text-green-600 font-medium">
-                    <Euro className="w-4 h-4 mr-2" />
-                    <span>€{rental.totalCost} ({rental.totalDays} dana)</span>
+                    {/* <Euro className="w-4 h-4 mr-2" /> */ }
+                    {rental.totalDays === 0? <span>€{rental.pricePerDay} 1 dan </span> : <span>€{rental.totalCost} ({rental.totalDays} dana)</span>}
                   </div>
                 </div>
 
@@ -291,6 +325,101 @@ export default function UserRentals() {
           >
             Prikaži sve rezultate
           </button>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {data?.pagination && data.pagination.totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 pt-6 border-t border-gray-200">
+          {/* Pagination Info */}
+          <div className="text-sm text-gray-600">
+            Prikazujem stranicu {data.pagination.currentPage} od {data.pagination.totalPages} 
+            ({data.pagination.totalRentals} ukupno rezervacija)
+          </div>
+
+          {/* Pagination Buttons */}
+          <div className="flex items-center gap-2">
+            {/* Previous Button */}
+            <button
+              onClick={() => handlePageChange(data.pagination.currentPage - 1)}
+              disabled={!data.pagination.hasPrevPage}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                data.pagination.hasPrevPage
+                  ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  : 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Prethodna
+            </button>
+
+            {/* Page Numbers */}
+            <div className="flex items-center gap-1">
+              {/* Show first page */}
+              {data.pagination.currentPage > 3 && (
+                <>
+                  <button
+                    onClick={() => handlePageChange(1)}
+                    className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    1
+                  </button>
+                  {data.pagination.currentPage > 4 && (
+                    <span className="px-2 text-gray-400">...</span>
+                  )}
+                </>
+              )}
+
+              {/* Show pages around current page */}
+              {Array.from({ length: Math.min(5, data.pagination.totalPages) }, (_, i) => {
+                const startPage = Math.max(1, data.pagination.currentPage - 2);
+                const pageNum = startPage + i;
+                
+                if (pageNum > data.pagination.totalPages) return null;
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      pageNum === data.pagination.currentPage
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              {/* Show last page */}
+              {data.pagination.currentPage < data.pagination.totalPages - 2 && (
+                <>
+                  {data.pagination.currentPage < data.pagination.totalPages - 3 && (
+                    <span className="px-2 text-gray-400">...</span>
+                  )}
+                  <button
+                    onClick={() => handlePageChange(data.pagination.totalPages)}
+                    className="px-3 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    {data.pagination.totalPages}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => handlePageChange(data.pagination.currentPage + 1)}
+              disabled={!data.pagination.hasNextPage}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                data.pagination.hasNextPage
+                  ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  : 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Sljedeća
+            </button>
+          </div>
         </div>
       )}
     </div>

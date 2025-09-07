@@ -1,157 +1,145 @@
-// Import Next.js Link component for client-side navigation between pages
-// This prevents full page reloads and provides better user experience
+'use client';
+
 import Link from 'next/link';
 
-// Define the structure of props that this component expects to receive
-// This is TypeScript interface that ensures type safety
 interface PaginationProps {
-  currentPage: number;        // Which page the user is currently viewing
-  totalPages: number;         // Total number of pages available
-  searchParams?: {            // Optional: URL search parameters to preserve when navigating
-    page?: string;           // Current page number as string (from URL)
-    search?: string;         // Search term if user is filtering items
+  currentPage: number;
+  totalPages: number;
+  searchParams?: {
+    page?: string;
+    search?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    category?: string;
+    sortBy?: string;
+    sortOrder?: string;
   };
 }
 
-// Main Pagination component that creates navigation controls for browsing through pages
-// This is necessary when you have many items and need to split them across multiple pages
 const Pagination = ({ currentPage, totalPages, searchParams }: PaginationProps) => {
-  // Maximum number of page buttons to show at once
-  // This prevents the pagination from becoming too wide on screens
-  const pagesToShow = 5;
+  // Debug logging
+  console.log('Pagination render:', { currentPage, totalPages, searchParams });
 
-  // Function that calculates which page numbers to display
-  // This creates a smart pagination that shows ellipsis (...) when there are many pages
-  const getPageNumbers = () => {
-    const pages = []; // Array to store page numbers and ellipsis
+  // Don't show pagination if there's only 1 page or less
+  if (totalPages <= 1) {
+    console.log('Not showing pagination - only 1 page or less');
+    return null;
+  }
 
-    // Case 1: If total pages is small, show all page numbers
-    // This is simple and clean when there aren't many pages
-    if (totalPages <= pagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Case 2: User is near the beginning (first few pages)
-      // Show first few pages, then ellipsis, then last page
-      if (currentPage <= pagesToShow - 2) {
-        for (let i = 1; i <= pagesToShow - 1; i++) {
-          pages.push(i);
-        }
-        pages.push('...'); // Ellipsis indicates skipped pages
-        pages.push(totalPages); // Always show the last page
-      } 
-      // Case 3: User is near the end (last few pages)
-      // Show first page, then ellipsis, then last few pages
-      else if (currentPage >= totalPages - (pagesToShow - 2)) {
-        pages.push(1); // Always show the first page
-        pages.push('...');
-        for (let i = totalPages - (pagesToShow - 2); i <= totalPages; i++) {
-          pages.push(i);
-        }
-      } 
-      // Case 4: User is in the middle
-      // Show first page, ellipsis, current page and neighbors, ellipsis, last page
-      else {
-        pages.push(1);
-        pages.push('...');
-        // Show current page and one page on each side
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
-        pages.push('...');
-        pages.push(totalPages);
-      }
-    }
-    return pages;
+  // Create URL with preserved search parameters
+  const createUrl = (page: number) => {
+    const params = new URLSearchParams();
+
+    // Preserve all search parameters
+    if (searchParams?.search) params.set('search', searchParams.search);
+    if (searchParams?.minPrice) params.set('minPrice', searchParams.minPrice);
+    if (searchParams?.maxPrice) params.set('maxPrice', searchParams.maxPrice);
+    if (searchParams?.category) params.set('category', searchParams.category);
+    if (searchParams?.sortBy) params.set('sortBy', searchParams.sortBy);
+    if (searchParams?.sortOrder) params.set('sortOrder', searchParams.sortOrder);
+
+    // ALWAYS add page parameter to ensure proper navigation
+    params.set('page', page.toString());
+
+    const url = `?${params.toString()}`;
+    console.log(`Creating URL for page ${page}:`, url);
+    return url;
   };
-
-  // Function that creates the URL for each page link
-  // This preserves search parameters when navigating between pages
-  const createPageUrl = (page: number) => {
-    const params = new URLSearchParams(); // Create URL parameters object
-    
-    // If there's a search term, keep it in the URL
-    // This ensures the search filter persists when changing pages
-    if (searchParams?.search) {
-      params.set('search', searchParams.search);
-    }
-    
-    // Only add page parameter if it's not page 1
-    // This keeps URLs clean (page 1 doesn't need ?page=1)
-    if (page > 1) {
-      params.set('page', page.toString());
-    }
-    
-    // Return the query string, or empty string if no parameters
-    return params.toString() ? `?${params.toString()}` : '';
-  };
-
-  // Calculate which page numbers to display
-  const pages = getPageNumbers();
 
   return (
-    <div className="flex justify-center gap-4 mt-6">
-      {/* Previous Page Button */}
-      {/* Show clickable link if not on first page, otherwise show disabled button */}
+    <div className="flex justify-center items-center gap-2 mt-8">
+      {/* Debug Info */}
+      <div className="absolute top-0 left-0 bg-yellow-100 p-2 rounded text-xs">
+        Debug: Page {currentPage} of {totalPages} | Can go back: {currentPage > 1 ? 'Yes' : 'No'}
+      </div>
+
+
+      {/* Previous Button */}
       {currentPage > 1 ? (
-        <Link
-          href={createPageUrl(currentPage - 1)}
-          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition"
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer"
+          onClick={(e) => {
+            e.preventDefault();
+            const url = createUrl(currentPage - 1);
+            window.location.href = url;
+          }}
         >
           ← Prethodna
-        </Link>
+        </button>
       ) : (
-        // Disabled button when on first page (can't go back further)
-        <span className="px-4 py-2 bg-gray-200 rounded opacity-50 cursor-not-allowed">
+        <span className="px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed">
           ← Prethodna
         </span>
       )}
 
-      {/* Page Number Buttons */}
-      {/* Render each page number or ellipsis */}
-      {pages.map((page, index) => {
-        // If it's an ellipsis, show it as text (not clickable)
-        if (page === '...') {
+      {/* Page Numbers */}
+      <div className="flex gap-1">
+        {/* Show first page */}
+        {currentPage > 3 && (
+          <>
+            <Link
+              href={createUrl(1)}
+              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              1
+            </Link>
+            {currentPage > 4 && <span className="px-2 text-gray-500">...</span>}
+          </>
+        )}
+
+        {/* Show pages around current page */}
+        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+          const startPage = Math.max(1, currentPage - 2);
+          const pageNum = startPage + i;
+
+          if (pageNum > totalPages) return null;
+
           return (
-            <span key={index} className="self-center text-gray-600">
-              ...
-            </span>
+            <Link
+              key={pageNum}
+              href={createUrl(pageNum)}
+              className={`px-3 py-2 rounded-lg transition-colors ${pageNum === currentPage
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+            >
+              {pageNum}
+            </Link>
           );
-        }
+        })}
 
-        // Convert page to number and check if it's the current page
-        const pageNumber = Number(page);
-        const isCurrentPage = currentPage === pageNumber;
+        {/* Show last page */}
+        {currentPage < totalPages - 2 && (
+          <>
+            {currentPage < totalPages - 3 && <span className="px-2 text-gray-500">...</span>}
+            <Link
+              href={createUrl(totalPages)}
+              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              {totalPages}
+            </Link>
+          </>
+        )}
+      </div>
 
-        return (
-          <Link
-            key={index}
-            href={createPageUrl(pageNumber)}
-            className={`px-4 py-2 rounded transition ${
-              isCurrentPage 
-                ? 'bg-gray-400 cursor-default'  // Current page: darker background, no hover
-                : 'bg-gray-200 hover:bg-gray-300' // Other pages: lighter background with hover effect
-            }`}
-            aria-current={isCurrentPage ? 'page' : undefined} // Accessibility: mark current page for screen readers
-          >
-            {page}
-          </Link>
-        );
-      })}
-
-      {/* Next Page Button */}
-      {/* Show clickable link if not on last page, otherwise show disabled button */}
+      {/* Next Button */}
       {currentPage < totalPages ? (
-        <Link
-          href={createPageUrl(currentPage + 1)}
-          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition"
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors cursor-pointer"
+          onClick={(e) => {
+            e.preventDefault();
+            console.log('Next button clicked!');
+            console.log('Current page:', currentPage);
+            console.log('Going to page:', currentPage + 1);
+            const url = createUrl(currentPage + 1);
+            console.log('URL:', url);
+            window.location.href = url;
+          }}
         >
           Sljedeća →
-        </Link>
+        </button>
       ) : (
-        // Disabled button when on last page (can't go forward further)
-        <span className="px-4 py-2 bg-gray-200 rounded opacity-50 cursor-not-allowed">
+        <span className="px-4 py-2 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed">
           Sljedeća →
         </span>
       )}
@@ -159,5 +147,4 @@ const Pagination = ({ currentPage, totalPages, searchParams }: PaginationProps) 
   );
 };
 
-// Export the component so it can be used in other files
 export default Pagination;

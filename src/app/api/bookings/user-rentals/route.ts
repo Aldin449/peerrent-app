@@ -11,6 +11,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Dohvati paginacijske parametre iz URL-a
+    // page - trenutna stranica (default: 1)
+    // limit - koliko stavki po stranici (default: 10)
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    
+    // Izračunaj skip vrijednost za Prisma query
+    // skip = (trenutna_stranica - 1) * broj_stavki_po_stranici
+    const skip = (page - 1) * limit;
+
     const user = await prisma.user.findUnique({
       where: { 
         email: session.user.email,
@@ -22,12 +33,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Korisnik nije pronađen' }, { status: 404 });
     }
 
-    // Get all bookings where user is the renter (not the owner)
+    // Dohvati ukupan broj rezervacija za paginaciju
+    // Ovo je potrebno da znamo koliko stranica imamo ukupno
+    const totalRentals = await prisma.booking.count({
+      where: {
+        userId: user.id, // Korisnik je onaj koji je iznajmio predmet
+      }
+    });
+
+    // Dohvati rezervacije sa paginacijom
+    // skip - preskoči prvih N stavki
+    // take - uzmi samo N stavki
     const userRentals = await prisma.booking.findMany({
       where: {
-        userId: user.id, // User is the one who rented the item
+        userId: user.id, // Korisnik je onaj koji je iznajmio predmet
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'desc' }, // Sortiraj po datumu kreiranja (najnovije prvo)
+      skip: skip, // Preskoči prvih N stavki
+      take: limit, // Uzmi samo N stavki
       include: {
         item: {
           include: {
@@ -80,12 +103,33 @@ export async function GET(request: NextRequest) {
       rental.status === 'REJECTED' || rental.status === 'CANCELLED'
     );
 
+    // Izračunaj paginacijske metapodatke
+    const totalPages = Math.max(Math.ceil(totalRentals / limit), 1); // Minimalno 1 stranica
+    const hasNextPage = page < totalPages; // Ima li sljedeću stranicu
+    const hasPrevPage = page > 1; // Ima li prethodnu stranicu
+
     return NextResponse.json({
-      allRentals: formattedRentals,
+      // Paginirani podaci
+      rentals: formattedRentals, // Samo trenutna stranica rezervacija
+      
+      // Paginacijski metapodaci
+      pagination: {
+        currentPage: page, // Trenutna stranica
+        totalPages: totalPages, // Ukupan broj stranica
+        totalRentals: totalRentals, // Ukupan broj rezervacija
+        limit: limit, // Broj stavki po stranici
+        hasNextPage: hasNextPage, // Ima li sljedeću stranicu
+        hasPrevPage: hasPrevPage, // Ima li prethodnu stranicu
+        nextPage: hasNextPage ? page + 1 : null, // Broj sljedeće stranice
+        prevPage: hasPrevPage ? page - 1 : null // Broj prethodne stranice
+      },
+      
+      // Kategorizirani podaci (samo za trenutnu stranicu)
       activeRentals,
       completedRentals,
       cancelledRentals,
-      totalRentals: formattedRentals.length,
+      
+      // Brojčani podaci za trenutnu stranicu
       totalActive: activeRentals.length,
       totalCompleted: completedRentals.length,
       totalCancelled: cancelledRentals.length

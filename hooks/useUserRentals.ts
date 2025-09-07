@@ -23,29 +23,42 @@ interface UserRental {
   pricePerDay: number;
 }
 
-interface UserRentalsResponse {
-  allRentals: UserRental[];
-  activeRentals: UserRental[];
-  completedRentals: UserRental[];
-  cancelledRentals: UserRental[];
-  totalRentals: number;
-  totalActive: number;
-  totalCompleted: number;
-  totalCancelled: number;
+// Interface za paginacijske metapodatke
+interface PaginationInfo {
+  currentPage: number;        // Trenutna stranica
+  totalPages: number;         // Ukupan broj stranica
+  totalRentals: number;       // Ukupan broj rezervacija
+  limit: number;              // Broj stavki po stranici
+  hasNextPage: boolean;       // Ima li sljedeću stranicu
+  hasPrevPage: boolean;       // Ima li prethodnu stranicu
+  nextPage: number | null;    // Broj sljedeće stranice
+  prevPage: number | null;    // Broj prethodne stranice
 }
 
-const fetchUserRentals = async (): Promise<UserRentalsResponse> => {
-  const response = await axios.get('/api/bookings/user-rentals');
+// Interface za odgovor API-ja sa paginacijom
+interface UserRentalsResponse {
+  rentals: UserRental[];           // Samo trenutna stranica rezervacija
+  pagination: PaginationInfo;      // Paginacijski metapodaci
+  activeRentals: UserRental[];     // Aktivne rezervacije (trenutna stranica)
+  completedRentals: UserRental[];  // Završene rezervacije (trenutna stranica)
+  cancelledRentals: UserRental[];  // Otkazane rezervacije (trenutna stranica)
+  totalActive: number;             // Broj aktivnih na trenutnoj stranici
+  totalCompleted: number;          // Broj završenih na trenutnoj stranici
+  totalCancelled: number;          // Broj otkazanih na trenutnoj stranici
+}
+
+const fetchUserRentals = async (page: number, limit: number): Promise<UserRentalsResponse> => {
+  const response = await axios.get(`/api/bookings/user-rentals?page=${page}&limit=${limit}`);
   return response.data;
 };
 
-export const useUserRentals = () => {
+export const useUserRentals = (page: number, limit: number) => {
   return useQuery({
-    queryKey: ['user-rentals'],
-    queryFn: fetchUserRentals,
+    queryKey: ['user-rentals', page, limit],
+    queryFn: () => fetchUserRentals(page, limit),
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
   });
 };
 
-export type { UserRental, UserRentalsResponse };
+export type { UserRental, UserRentalsResponse, PaginationInfo };

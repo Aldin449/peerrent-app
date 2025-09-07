@@ -45,7 +45,7 @@ const ProfileTabs: FunctionComponent<ProfileTabsProps> = ({ items }) => {
             >
               LISTA ŽELJA
             </button>
-            <button
+          {/*  <button
               onClick={() => setActiveTab('history')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'history'
                   ? 'border-blue-500 text-blue-600'
@@ -53,7 +53,7 @@ const ProfileTabs: FunctionComponent<ProfileTabsProps> = ({ items }) => {
                 }`}
             >
               HISTORIJA
-            </button>
+            </button>*/}
             <button
               onClick={() => setActiveTab('rentals')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'rentals'

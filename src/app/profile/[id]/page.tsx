@@ -1,16 +1,19 @@
 import React from 'react'
 import prisma from '@/lib/prisma'
 import { notFound } from 'next/navigation'
-import RatingModal from '../../../../components/Modals/RatingModal';
-import UserRating from '../../../../components/UserRating';
 import EnhancedUserRating from '../../../../components/EnhancedUserRating';
+import Image from 'next/image';
+import Pagination from '../../../../components/Pagination';
 
 interface ProfilePageProps {
   params: {id: string};
+  searchParams: {page: string};
 }
 
-export default async function ProfilePage({params}: ProfilePageProps)  {
+const PAGE_SIZE = 6;
 
+export default async function ProfilePage({params, searchParams}: ProfilePageProps)  {
+  
   const {id} = await params
     const user = await prisma.user.findUnique({
         where:{id:id},
@@ -19,6 +22,7 @@ export default async function ProfilePage({params}: ProfilePageProps)  {
             ratingsReceived: true,
         },
     })
+
 
     const ratingsReceived = await prisma.userRating.findMany({
       where:{toUserId:id},
@@ -31,6 +35,22 @@ export default async function ProfilePage({params}: ProfilePageProps)  {
         notFound()
     }
 
+      // Broj itema radi paginacije
+  const totalItems = await prisma.item.count({
+    where: { ownerId: id },
+  });
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const rawPage = parseInt(searchParams?.page ?? "1", 10);
+  const page = Number.isFinite(rawPage) ? Math.min(Math.max(rawPage, 1), totalPages) : 1;
+
+  const items = await prisma.item.findMany({
+    where:{ownerId:id},
+    orderBy:{createdAt:'desc'},
+    take:PAGE_SIZE,
+    skip:(page - 1) * PAGE_SIZE,
+  })
+
     // Koristi postojeći averageRating iz User modela
     const averageRating = user.averageRating || 0
 
@@ -40,7 +60,7 @@ export default async function ProfilePage({params}: ProfilePageProps)  {
         month: 'long'
     }) : 'Nepoznato'
 
-    console.log(ratingsReceived)
+    console.log(items,'items')
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -50,9 +70,11 @@ export default async function ProfilePage({params}: ProfilePageProps)  {
           <div className="flex items-center space-x-6">
             {/* Profile Avatar */}
             <div className="flex-shrink-0">
+              {user.profilePicture ? <Image src={user.profilePicture} alt={user.name || 'Anonimni korisnik'} width={96} height={96} className='rounded-full' /> : 
               <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
                 {user.name?.charAt(0).toUpperCase() || 'U'}
               </div>
+              }
             </div>
             
             {/* Profile Info */}
@@ -139,10 +161,10 @@ export default async function ProfilePage({params}: ProfilePageProps)  {
               <div className="p-6 border-b">
                 <h3 className="text-lg font-semibold text-gray-900">Items ({user.item?.length || 0})</h3>
               </div>
-              <div className="p-6">
-                {user.item && user.item.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {user.item.map((item: any) => (
+              <div className="p-6 h-[290px] overflow-y-auto">
+                {items && items.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
+                    {items.map((item: any) => (
                       <div key={item.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                         <h4 className="font-medium text-gray-900">{item.title}</h4>
                         <p className="text-gray-600 text-sm mt-1">{item.description}</p>
@@ -164,6 +186,7 @@ export default async function ProfilePage({params}: ProfilePageProps)  {
                 )}
               </div>
             </div>
+            <Pagination currentPage={page} totalPages={totalPages} searchParams={searchParams} />
 
             {/* User's Ratings */}
             <EnhancedUserRating user={user} ratingsReceived={ratingsReceived}/>
