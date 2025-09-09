@@ -10,14 +10,25 @@ import ItemCard from "./ItemCard";
 interface Item {
   id: string;
   title: string;
-  location: string;
-  pricePerDay: number;
-  phoneNumber: string | null;
-  isRented: boolean;
-  images: string[];
   description: string;
-  ownerId: string;
-  createdAt: string;
+  phoneNumber: string | null;
+  pricePerDay: number;
+  location: string;
+  images: string[] | string | null;
+  category?: string | null;
+  user: {
+    name: string | null;
+    email: string;
+    averageRating?: number | null;
+    ratingsCount?: number | null;
+    emailVerified?: boolean;
+    createdAt?: string | null;
+    _count: {
+      item: number;
+      Booking: number;
+      messagesSent: number;
+    };
+  };
 }
 
 interface ProfileTabsProps {
@@ -29,6 +40,7 @@ const ProfileTabs: FunctionComponent<ProfileTabsProps> = ({ items }) => {
   const { wishlist, isLoading: wishlistLoading } = useWishlist();
   const { data: activityData, isLoading: activityLoading } = useUserActivity(10);
 
+  console.log(wishlist, 'wishlist')
 
   return (
     <div>

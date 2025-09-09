@@ -34,6 +34,7 @@ const TrustIndicators: React.FC<TrustIndicatorsProps> = ({
   className = ''
 }) => {
   const { score, badges } = useTrustScore(userData)
+  console.log(badges, 'badges')
 
   // Sort badges by importance/priority
   const sortedBadges = badges.sort((a, b) => {

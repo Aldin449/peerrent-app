@@ -53,10 +53,11 @@ export const useTrustScore = (userData: UserData): TrustScoreData => {
     const locationVerification = location ? 100 : 0
     
     // Rating quality (based on average rating and number of ratings)
+    const safeRatingsCount = ratingsCount ?? 0;
     const ratingQuality = (() => {
-      if (!averageRating || ratingsCount === 0) return 0
-      if (ratingsCount < 3) return Math.round(averageRating * 20) // Max 100 for 5 stars
-      if (ratingsCount < 10) return Math.round(averageRating * 18) // Slightly lower for fewer ratings
+      if (!averageRating || safeRatingsCount === 0) return 0
+      if (safeRatingsCount < 3) return Math.round(averageRating * 20) // Max 100 for 5 stars
+      if (safeRatingsCount < 10) return Math.round(averageRating * 18) // Slightly lower for fewer ratings
       return Math.round(averageRating * 20) // Full score for 10+ ratings
     })()
 

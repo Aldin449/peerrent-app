@@ -9,6 +9,7 @@ interface Item {
   id: string;
   title: string;
   description: string;
+  phoneNumber?: string | null;
   pricePerDay: number;
   location: string;
   images: string[] | string | null;
@@ -20,6 +21,11 @@ interface Item {
     ratingsCount?: number | null;
     emailVerified?: boolean;
     createdAt?: string | null;
+    _count?: {
+      item: number;
+      Booking: number;
+      messagesSent: number;
+    };
   };
 }
 
@@ -55,8 +61,7 @@ export default function ItemCard({ item }: ItemCardProps) {
     }
   }
 
-  // Ispisujemo slike u konzolu radi debugovanja
-  console.log('item images:', images);
+  console.log(item, '59');
 
   return (
     <div className="relative border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200 group">
@@ -115,18 +120,19 @@ export default function ItemCard({ item }: ItemCardProps) {
             <TrustIndicators
               userData={{
                 emailVerified: item.user.emailVerified || false,
-                phoneNumber: null, // Not available in current data
-                location: null, // Not available in current data
+                phoneNumber: item.phoneNumber, 
+                location: item.location, 
                 averageRating: item.user.averageRating,
                 ratingsCount: item.user.ratingsCount,
                 createdAt: item.user.createdAt,
-                itemCount: 0, // Not available in current data
-                bookingCount: 0, // Not available in current data
-                messageCount: 0 // Not available in current data
+                itemCount: item.user._count?.item || 0, 
+                bookingCount: item.user._count?.Booking || 0, 
+                messageCount: item.user._count?.messagesSent || 0, 
+
               }}
               showScore={false}
               showBadges={true}
-              maxBadges={2}
+              maxBadges={3}
               size="sm"
             />
           </div>
