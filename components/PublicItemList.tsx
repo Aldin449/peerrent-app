@@ -176,7 +176,7 @@ async function getItems(page: number, search: string, minPrice?: string, maxPric
       orderBy,                   // Use dynamic sorting
       include: {                 // Include related user data
         user: {
-          select: { name: true, email: true, _count: { select: { item: true, Booking: true, messagesSent: true } } },
+          select: { name: true, email: true, emailVerified: true, _count: { select: { item: true, Booking: true, messagesSent: true } } },
         },
       },
     }),

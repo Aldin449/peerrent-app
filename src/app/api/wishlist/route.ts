@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         item: {
           include: {
             user: {
-              select: { name: true, email: true , _count: { select: { item: true, Booking: true, messagesSent: true } } },
+              select: { name: true, email: true, emailVerified: true, _count: { select: { item: true, Booking: true, messagesSent: true } } },
             },
           },
         },
